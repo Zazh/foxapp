@@ -15,7 +15,7 @@ CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
 # Application definition
 
 INSTALLED_APPS = [
-    'modeltranslation',  # ВАЖНО: до django.contrib.admin!
+    'modeltranslation',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

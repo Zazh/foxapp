@@ -36,7 +36,7 @@
             </h5>
             <ul class="w-full flex flex-col md:flex-row gap-2 md:gap-4 justify-center">
                 <li class="flex justify-center">
-                    <button class="[ w-[90%] md:w-[12.5rem] ] text-nowrap btn-default primary lg justify-center [ modal-open ]" data-modal="modal-feedback">Reserve your spot</button>
+                    <a href="{% url 'tariff_detail' 'auto' 'standard' %}" class="[ w-[90%] md:w-[12.5rem] ] text-nowrap btn-default primary lg justify-center">Reserve your spot</a>
                 </li>
                 <li class="flex justify-center">
                     <button class="[ w-[90%] md:w-[12.5rem] ] text-nowrap btn-default outline lg [ flex gap-2 items-center justify-center ] [ modal-open ]" data-modal="modal-locations">
@@ -215,9 +215,9 @@
         <div class="arrow-border"></div>
     </div>
     <div class="w-full flex justify-center pb-12">
-        <button class="btn-default primary lg justify-center [ modal-open ]" data-modal="modal-feedback" data-benefits-hover>
+        <a href="{% url 'tariff_detail' 'auto' 'standard' %}" class="btn-default primary lg justify-center [ modal-open ]" data-modal="modal-feedback" data-benefits-hover>
             Reserve your spot
-        </button>
+        </a>
     </div>
 </section>
 
@@ -343,7 +343,7 @@
 
             <!-- Cards dashboard -->
             <div class="flex w-full md:w-5xl justify-center absolute bottom-[1rem]">
-                <ul class="flex gap-4 px-4 w-full justify-start md:justify-center lg:justify-start relative overflow-x-auto snap-x snap-mandatory lg:overflow-visible">
+                <ul class="flex gap-4 px-4 w-full justify-start md:justify-center lg:justify-start relative overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:overflow-visible">
                     <li data-delay="1" class="reveal-card relative snap-center min-w-48 lg:min-w-0 lg:absolute lg:-top-[250px] lg:start-0">
                             <span class="bg-blue-600 shadow-card text-white w-48 aspect-square p-4 rounded-lg gap-4 flex flex-col ">
                                 <span class="pt-2">
