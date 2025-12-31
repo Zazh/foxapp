@@ -1,0 +1,116 @@
+{% extends 'cabinet/base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans "History of visits" %}{% endblock %}
+
+{% block content %}
+<section class="grid md:grid-cols-12 gap-x-4 px-4 md:px-4 min-h-[80vh]">
+    <!-- Сайдбар / табы -->
+    <div class="lg:col-span-3 xl:col-span-4 col-span-full lg:border-r border-gray-100 overflow-hidden -mx-4 md:mx-0">
+        <!-- Фиксированная навигация (скрыта по умолчанию) -->
+        <nav id="fixed-nav" class="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-100 -translate-y-full transition-transform duration-300 lg:hidden">
+            <ul class="flex overflow-x-auto gap-4 py-3 px-4 scrollbar-hide">
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "History" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Billing" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Settings" %}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="sticky top-0 bg-white z-10 lg:static border-b lg:border-0 border-gray-100">
+            <ul class="flex flex-row overflow-x-auto gap-4 py-3 px-4 md:px-0
+                       lg:flex-col lg:overflow-visible lg:gap-2 lg:pt-6 lg:pr-16 lg:text-right
+                       scrollbar-hide">
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "History" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Billing" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Settings" %}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="lg:col-span-8 xl:col-span-6 col-span-full">
+        <div class="flex flex-col gap-6 py-12">
+            <div>
+                <h1 class="h1 leading-tight">{% trans "History of visits" %}</h1>
+            </div>
+
+            {% if visits %}
+            <div class="flex flex-col gap-2">
+                <!-- Header -->
+                <div class="flex gap-1 pb-2">
+                    <div class="flex-1 md:flex-2 inline-flex gap-1">
+                        <div class="flex-1 font-bold text-sm">{% trans "Date" %}</div>
+                        <div class="flex-1 font-bold text-sm hidden md:block">{% trans "Time" %}</div>
+                    </div>
+                    <div class="flex-1 font-bold text-sm">{% trans "Visitor" %}</div>
+                    <div class="flex-1 font-bold text-sm hidden md:block">{% trans "Unit" %}</div>
+                    <div class="w-20 font-bold text-sm hidden md:block">{% trans "Type" %}</div>
+                </div>
+
+                <!-- Visits -->
+                {% for visit in visits %}
+                <div class="flex gap-1 border-b border-gray-100 py-2 items-center">
+                    <div class="flex-1 md:flex-2 inline-flex gap-1">
+                        <div class="flex-1 text-sm">{{ visit.visited_at|date:"M d, Y" }}</div>
+                        <div class="flex-1 text-sm hidden md:block">{{ visit.visited_at|time:"H:i" }}</div>
+                    </div>
+                    <div class="flex-1 text-sm">{{ visit.visitor_name }}</div>
+                    <div class="flex-1 text-sm hidden md:block font-mono">{{ visit.booking.storage_unit.full_code }}</div>
+                    <div class="w-20 hidden md:block">
+                        {% if visit.visitor_type == 'owner' %}
+                        <span class="inline-flex px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">{% trans "Owner" %}</span>
+                        {% else %}
+                        <span class="inline-flex px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">{% trans "Guest" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-12">
+                <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <p class="text-gray-500 font-medium">{% trans "No visits yet" %}</p>
+                <p class="text-gray-400 text-sm mt-1">{% trans "Your visit history will appear here" %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

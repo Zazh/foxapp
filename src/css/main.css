@@ -1,0 +1,410 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
+@import "tailwindcss";
+
+/* Base */
+@import "./base/fonts.css";
+@import "./base/typography.css";
+
+
+/* Components */
+@import "./components/buttons.css";
+@import "./components/cards.css";
+@import "./components/forms.css";
+@import "./components/modals.css";
+
+
+/* Utilities */
+@import "./utilities/custom.css";
+
+
+@layer base {
+    :root {
+        --default-font-family: "Helvetica Neue", sans-serif;
+    }
+}
+
+@theme {
+    --color-gray-10:    #f0f0f0;
+    --color-gray-50:    #F6F6F6;
+    --color-gray-100:   #D9D9D9;
+    --color-gray-500:   #7D7D7D;
+    --color-gray-600:   #868686;
+    --color-gray-700:   #848484;
+    --color-gray-800:   #333333;
+
+    --color-green-500:  #009966;
+    --color-green-600:  #1B3C39;
+
+    --color-blue-600:   #165DFC;
+
+    --color-red-500:    #FF2C2C;
+
+    --color-orange-500: #E26137;
+
+    --shadow-card: 16px 24px 32px 0px rgba(0, 0, 0, 0.04);
+}
+
+.header {
+    @apply flex items-center justify-center w-full px-4 py-4 lg:py-2 z-100 ;
+}
+.header.default {
+    @apply fixed top-0 bg-white border-b-1 border-b-gray-100;
+}
+.header.static {
+    @apply relative top-0 bg-white border-b-1 border-b-gray-100;
+}
+.header.hero {
+    @apply relative top-0 bg-gray-50;
+}
+.footer {
+    @apply border-t-gray-100 border-t-1 px-6;
+}
+
+.hero-floor {
+    background: url("../images/bg_wall.jpg") #f7f9f8 no-repeat top center;
+    background-size: cover;
+}
+.benefits-section {
+    @apply bg-gray-10 relative pb-10 flex flex-wrap;
+}
+
+.benefits-wrap {
+    @apply w-[13rem] min-w-[13rem] p-2 snap-center
+    lg:w-auto lg:min-w-0 lg:flex-1
+    xl:w-[13rem] xl:min-w-[13rem] xl:flex-none;
+}
+
+.benefits-wrap .line-block {
+    @apply flex -mx-2;
+}
+
+.benefits-wrap .line-base {
+    @apply w-1/2 h-5;
+}
+
+.benefits-container {
+    @apply w-full flex gap-0 overflow-x-auto snap-x snap-mandatory lg:justify-center lg:overflow-visible;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none; /* Firefox */
+}
+
+.benefits-container::-webkit-scrollbar {
+    display: none; /* Chrome, Safari */
+}
+
+.benefits-wrap .line-block > .line-base:first-child,
+.benefits-wrap .line-block > .line-base:last-child {
+    transition: box-shadow 0.3s ease, border-radius 0.3s ease;
+}
+
+/* ========== БАЗОВОЕ СОСТОЯНИЕ ========== */
+
+/* Левая линия — полная тень (нижняя + правая) */
+.benefits-wrap .line-block > .line-base:first-child {
+    box-shadow: 0 1px 0 0 var(--color-black), 1px 0 0 0 var(--color-black);
+    @apply rounded-br-2xl;
+}
+
+/* Правая линия — полная тень (нижняя + левая) */
+.benefits-wrap .line-block > .line-base:last-child {
+    box-shadow: 0 1px 0 0 var(--color-black), -1px 0 0 0 var(--color-black);
+    @apply rounded-bl-2xl;
+}
+
+/* Первая карточка — скрыть левую линию */
+.benefits-wrap:first-child .line-block > .line-base:first-child {
+    box-shadow: none;
+}
+
+/* Последняя карточка — скрыть правую линию */
+.benefits-wrap:last-child .line-block > .line-base:last-child {
+    box-shadow: none;
+}
+
+/* ========== ACTIVE STATE ========== */
+
+/* Средние карточки: убрать скругление */
+.benefits-section.active .benefits-wrap:not(:first-child):not(:last-child) .line-block > .line-base {
+    @apply rounded-none;
+}
+
+/* Средние карточки: убрать правую вертикаль у first-child */
+.benefits-section.active .benefits-wrap:not(:first-child):not(:last-child) .line-block > .line-base:first-child {
+    box-shadow: 0 1px 0 0 var(--color-orange-500);
+}
+
+/* Средние карточки: оранжевая тень у last-child */
+.benefits-section.active .benefits-wrap:not(:first-child):not(:last-child) .line-block > .line-base:last-child {
+    box-shadow: 0 1px 0 0 var(--color-orange-500), -1px 0 0 0 var(--color-orange-500);
+}
+
+/* Первая карточка в active — полная тень (нижняя + левая) */
+.benefits-section.active .benefits-wrap:first-child .line-block > .line-base:last-child {
+    box-shadow: 0 1px 0 0 var(--color-orange-500), -1px 0 0 0 var(--color-orange-500);
+    @apply rounded-bl-2xl;
+}
+
+/* Последняя карточка в active */
+.benefits-section.active .benefits-wrap:last-child .line-block > .line-base:first-child {
+    box-shadow: 0 1px 0 0 var(--color-orange-500), 1px 0 0 0 var(--color-orange-500);
+    @apply rounded-br-2xl;
+}
+
+.benefits-section .arrow-border {
+    @apply h-12 w-[1px] -mt-2 -ml-[1px];
+}
+.benefits-section.active .arrow-border {
+    @apply bg-orange-500;
+}
+
+
+/* ========== RTL SUPPORT ========== */
+
+/* RTL: Левая линия — инвертируем тень */
+[dir="rtl"] .benefits-wrap .line-block > .line-base:first-child {
+    box-shadow: 0 1px 0 0 var(--color-black), -1px 0 0 0 var(--color-black);
+    @apply rounded-bl-2xl rounded-br-none;
+}
+
+/* RTL: Правая линия — инвертируем тень */
+[dir="rtl"] .benefits-wrap .line-block > .line-base:last-child {
+    box-shadow: 0 1px 0 0 var(--color-black), 1px 0 0 0 var(--color-black);
+    @apply rounded-br-2xl rounded-bl-none;
+}
+
+/* RTL: Первая карточка — скрыть правую (визуально она справа) */
+[dir="rtl"] .benefits-wrap:first-child .line-block > .line-base:first-child {
+    box-shadow: none;
+}
+
+/* RTL: Первая карточка — показать левую */
+[dir="rtl"] .benefits-wrap:first-child .line-block > .line-base:last-child {
+    box-shadow: 0 1px 0 0 var(--color-black), 1px 0 0 0 var(--color-black);
+}
+
+/* RTL: Последняя карточка — скрыть левую (визуально она слева) */
+[dir="rtl"] .benefits-wrap:last-child .line-block > .line-base:last-child {
+    box-shadow: none;
+}
+
+/* RTL: Последняя карточка — показать правую */
+[dir="rtl"] .benefits-wrap:last-child .line-block > .line-base:first-child {
+    box-shadow: 0 1px 0 0 var(--color-black), -1px 0 0 0 var(--color-black);
+}
+
+/* ========== RTL ACTIVE STATE ========== */
+
+/* RTL: Средние карточки active */
+[dir="rtl"] .benefits-section.active .benefits-wrap:not(:first-child):not(:last-child) .line-block > .line-base:first-child {
+    box-shadow: 0 1px 0 0 var(--color-orange-500), -1px 0 0 0 var(--color-orange-500);
+}
+
+[dir="rtl"] .benefits-section.active .benefits-wrap:not(:first-child):not(:last-child) .line-block > .line-base:last-child {
+    box-shadow: 0 1px 0 0 var(--color-orange-500);
+}
+
+/* RTL: Первая карточка active */
+[dir="rtl"] .benefits-section.active .benefits-wrap:first-child .line-block > .line-base:first-child {
+    box-shadow: none;
+}
+
+[dir="rtl"] .benefits-section.active .benefits-wrap:first-child .line-block > .line-base:last-child {
+    box-shadow: 0 1px 0 0 var(--color-orange-500), 1px 0 0 0 var(--color-orange-500);
+    @apply rounded-br-2xl rounded-bl-none;
+}
+
+/* RTL: Последняя карточка active */
+[dir="rtl"] .benefits-section.active .benefits-wrap:last-child .line-block > .line-base:last-child {
+    box-shadow: none;
+}
+
+[dir="rtl"] .benefits-section.active .benefits-wrap:last-child .line-block > .line-base:first-child {
+    box-shadow: 0 1px 0 0 var(--color-orange-500), -1px 0 0 0 var(--color-orange-500);
+    @apply rounded-bl-2xl rounded-br-none;
+}
+
+/* RTL: Arrow border */
+[dir="rtl"] .benefits-section .arrow-border {
+    @apply -ml-[1px] mr-0;
+}
+
+
+
+
+.gallery-section {
+    @apply bg-white relative flex flex-wrap;
+}
+
+.gallery-slides {
+    @apply relative bg-gray-100;
+}
+
+.gallery-slide {
+    @apply absolute inset-0 opacity-0 transition-opacity duration-500;
+}
+
+.gallery-slide.active {
+    @apply opacity-100;
+}
+
+.gallery-title {
+    @apply font-medium text-gray-800 hidden;
+}
+
+.gallery-control {
+    @apply absolute top-1/2 -translate-y-1/2 w-12 h-12
+    bg-white/80 hover:bg-white rounded-full
+    flex items-center justify-center
+    shadow-md transition-all cursor-pointer
+    z-10;
+}
+
+.gallery-control.prev {
+    @apply left-4;
+}
+
+.gallery-control.next {
+    @apply right-4;
+}
+
+.gallery-control:hover {
+    @apply scale-110;
+}
+
+.gallery-title.active {
+    @apply block;
+}
+
+.gallery-dots {
+    @apply absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10;
+}
+
+.gallery-dot {
+    @apply w-3 h-3 rounded-full bg-white/50 transition-all cursor-pointer;
+}
+
+.gallery-dot.active {
+    @apply bg-white scale-110;
+}
+
+.gallery-dot:hover {
+    @apply bg-white/80;
+}
+
+
+
+.dashboard-section {
+    @apply lg:px-12 md:px-2;
+}
+.dashboard-container {
+    @apply bg-gray-10 rounded-none md:rounded-4xl;
+}
+
+.feedback_manager {
+    @apply pt-8 pb-12;
+}
+.feedback_manager-container {
+    @apply lg:px-12 md:px-2 flex flex-wrap gap-8;
+}
+
+
+.location-section {
+    @apply flex flex-col gap-2;
+}
+
+.tab-content.hidden {
+    @apply opacity-0 absolute pointer-events-none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+
+/* ==========================================
+   SCROLL REVEAL ANIMATIONS
+   ========================================== */
+
+.reveal-card {
+    opacity: 0;
+    transform: translateY(40px);
+    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+}
+
+.reveal-card.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Стрелки тоже скрыты изначально */
+.reveal-card .reveal-arrow {
+    opacity: 0;
+    transition: opacity 0.4s ease-out 0.3s; /* Появляется после карточки */
+}
+
+.reveal-card.revealed .reveal-arrow {
+    opacity: 1;
+}
+
+/* Задержки для каждой карточки */
+.reveal-card[data-delay="1"] {
+    transition-delay: 0.1s;
+}
+
+.reveal-card[data-delay="2"] {
+    transition-delay: 0.3s;
+}
+
+.reveal-card[data-delay="3"] {
+    transition-delay: 0.5s;
+}
+
+
+
+/* ==========================================
+   CAR SLIDER
+   ========================================== */
+
+.car-slider-container {
+    display: inline-block;
+}
+
+.car-slide {
+    opacity: 0;
+    transition: opacity 0.8s ease-in-out;
+}
+
+/* Первая картинка задаёт размер контейнера */
+.car-slide:first-child {
+    position: relative;
+}
+
+/* Остальные картинки поверх первой */
+.car-slide:not(:first-child) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* Активная картинка видна */
+.car-slide.active {
+    opacity: 1;
+}
+
+/* До загрузки — показываем первую чтобы не было скачка */
+.car-slider-container:not(.loaded) .car-slide:first-child {
+    opacity: 1;
+}
+
+@layer components {
+
+}
+
+

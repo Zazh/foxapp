@@ -1,0 +1,49 @@
+@layer components {
+    .input-floating {
+        @apply relative;
+    }
+
+    .input-floating input {
+        @apply w-full pt-6.5 pb-2 px-4 text-sm border border-gray-100 rounded-lg font-bold
+        outline-none bg-white transition-colors focus:border-orange-500;
+    }
+
+    .input-floating label {
+        @apply absolute left-4 top-1/2 -translate-y-1/2 text-sm text-gray-700 font-bold leading-tight
+        pointer-events-none transition-all duration-200;
+    }
+
+    .input-floating input:focus + label,
+    .input-floating input:not(:placeholder-shown) + label {
+        @apply top-2.5 text-xs text-gray-700 translate-y-0;
+    }
+    .input-password {
+        position: relative;
+    }
+
+    .input-password input {
+        padding-right: 48px;
+    }
+
+    .input-floating.error input {
+        @apply border-red-500;
+    }
+
+    .input-floating.error label {
+        @apply text-red-500;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6b7280;
+        cursor: pointer;
+        padding: 4px;
+    }
+
+    .password-toggle:hover {
+        color: #1f2937;
+    }
+}

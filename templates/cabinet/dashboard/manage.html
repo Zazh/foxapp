@@ -1,0 +1,231 @@
+{% extends 'cabinet/base.html' %}
+{% load static i18n %}
+
+{% block title %}Manage{% endblock %}
+
+{% block modals %}
+{% include 'components/modals/modal-upgrade-plane.html' %}
+{#{% include 'components/modals/modal-cancel-subscription.html' %}#}
+{% endblock %}
+
+{% block content %}
+<section class="grid md:grid-cols-12 gap-x-4 px-4 md:px-4 min-h-[80vh]">
+    <!-- Сайдбар / табы -->
+    <div class="lg:col-span-3 xl:col-span-4 col-span-full lg:border-r border-gray-100 overflow-hidden -mx-4 md:mx-0">
+        <!-- Фиксированная навигация (скрыта по умолчанию) -->
+        <nav id="fixed-nav" class="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-100 -translate-y-full transition-transform duration-300 lg:hidden">
+            <ul class="flex overflow-x-auto gap-4 py-3 px-4 scrollbar-hide">
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "History" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Billing" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Settings" %}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="sticky top-0 bg-white z-10 lg:static border-b lg:border-0 border-gray-100">
+            <ul class="flex flex-row overflow-x-auto gap-4 py-3 px-4 md:px-0
+                       lg:flex-col lg:overflow-visible lg:gap-2 lg:pt-6 lg:pr-16 lg:text-right
+                       scrollbar-hide">
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "History" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Billing" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Settings" %}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="lg:col-span-8 xl:col-span-6 col-span-full">
+        <div class="flex flex-col gap-6 py-12">
+            <div class="flex gap-3 items-center">
+                <a href="{% url 'cabinet-dashboard' %}" class="btn-back">
+                    <svg width="6" height="10" viewBox="0 0 6 10" fill="none">
+                        <path d="M5 1L1 5L5 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </a>
+                <h1 class="h3 leading-tight mt-1">{% trans 'Manage' %}</h1>
+            </div>
+            <div>
+                <div>
+                    <h2 class="text-lg font-bold text-black">
+                        {% if booking.storage_unit %}
+                            {% trans "Unit" %} <span>{{ booking.storage_unit.full_code }}</span>
+                        {% else %}
+                            {{ booking.tariff.name }}
+                        {% endif %}
+                    </h2>
+                </div>
+                <div class="flex pt-2 pb-4 flex-col gap-4">
+                    <div>
+                        <p class="text-sm font-medium text-gray-700 leading-tight">
+                            {% trans "Expires" %} {{ booking.end_date|date:"F d, Y" }}
+                            <span class="block text-gray-500 mt-1">
+                                {{ booking.days_remaining }} {% trans "days remaining" %}.
+                            </span>
+
+                        </p>
+                        <p class="text-sm font-bold pt-2">
+                            {{ booking.tariff.name }} - {{ booking.period.name }} (AED {{ booking.total_aed|floatformat:0 }})
+                        </p>
+                    </div>
+                    <div class="flex gap-3">
+                        <button class="btn-card default [ modal-open ]" data-modal="modal-upgrade-plane">{% trans "Extend Rental" %}</button>
+    <!--                        <button class="btn-card outline-secondary text-red-500 hover:text-white [ modal-open ]" data-modal="modal-cancel-subscription">Cancel</button>-->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Модальное upgrade -->
+<div class="modal-overlay" id="modal-upgrade-plane">
+  <form method="post" action="{% url 'cabinet-booking-extend' booking.pk %}" class="modal flex flex-col gap-8">
+
+    {% csrf_token %}
+    <div class="modal-header px-4 md:px-6">
+      <div class="flex flex-col">
+        <div class="pb-1">
+            <h3 class="h2 text-center">{% trans "Extend Your Rental" %}</h3>
+        </div>
+        <div>
+            <p class="text-center leading-tight font-medium text-gray-700">
+                {% trans "Select a period to extend your rental." %}
+                <span class="block mt-1">
+                    {% trans "The new time will be added to your current end date:" %}
+                    <strong class="text-black">{{ booking.end_date|date:"F d, Y" }}</strong>
+                </span>
+            </p>
+        </div>
+      </div>
+      <button class="modal-close [ absolute right-4 top-4 ] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body px-4 md:px-6 flex flex-col gap-8">
+      <div class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {% for period in periods %}
+            <label class="pricing-card">
+                <input type="radio" name="period" value="{{ period.id }}" class="sr-only peer"
+                    data-price="{{ period.price_aed }}"
+                    {% if period.has_discount %}
+                        data-discount="{{ period.discount_percent }}"
+                        data-original="{{ period.original_price_aed }}"
+                    {% endif %}
+                    {% if period.is_recommended %}checked{% endif %}>
+
+                    <span class="pricing-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                        <span class="pricing-card-check">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </span>
+                        <span class="pricing-card-content">
+                            <span class="text-base font-bold text-black">{{ period.name }}</span>
+                            <span class="text-gray-600 text-sm mt-1">{{ period.description }}</span>
+                        </span>
+                        <span class="pricing-card-price">
+                            <span class="text-sm font-bold text-black">AED {{ period.price_aed|floatformat:0 }}</span>
+                            {% if period.has_discount %}
+                                <span class="text-sm font-bold text-orange-500">/ {{ period.discount_percent }}% off</span>
+                            {% endif %}
+                        </span>
+                    </span>
+            </label>
+            {% endfor %}
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div>
+          <h2 class="text-sm text-black font-bold">{% trans 'Additional services' %}</h2>
+        </div>
+        <div class="flex flex-col gap-3">
+            {% for addon in addons %}
+            <label class="addon-card">
+                <input type="checkbox" name="addons" value="{{ addon.id }}" class="sr-only peer"
+                    data-price="{{ addon.price_aed }}"
+                    {% if addon.is_free %}data-free="true"{% endif %}>
+
+                    <span class="addon-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                        <span class="addon-card-checkbox">
+                            <svg class="w-4 h-4 opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </span>
+                        <span class="addon-card-content">
+                            <span class="text-base font-bold text-black">{{ addon.name }}</span>
+                            <span class="text-gray-600 text-sm">{{ addon.description }}</span>
+                        </span>
+                        <span class="addon-card-price">
+                            <span class="text-base font-bold text-gray-800">
+                                {% if addon.is_free %}
+                                    {% trans "Free" %}
+                                {% else %}
+                                    + AED {{ addon.price_aed|floatformat:0 }}
+                                {% endif %}
+                            </span>
+                        </span>
+                    </span>
+            </label>
+            {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer bg-black/5">
+      <!-- Итого -->
+      <div class="flex flex-col gap-6 flex-wrap px-4 md:px-6 pb-4">
+        <div>
+          <ul class="flex justify-between items-center gap-2 font-medium">
+            <li class="uppercase tracking-wider text-gray-600 text-xs font-bold">{% trans 'Total' %}</li>
+            <li class="uppercase text-base text-black font-bold">
+              <span id="total-price">AED 0</span>
+              <s class="text-sm text-gray-600 hidden" id="original-price">/ AED 0</s>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <button type="submit" class="btn-default primary lg justify-center w-full flex">
+                {% trans "Extend Rental" %}
+            </button>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+{% endblock %}

@@ -1,0 +1,187 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Booking #{{ booking.pk }}{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <a href="{% url 'backoffice:booking_list' %}" class="text-blue-600 hover:underline text-sm">← Back to bookings</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-2">Booking #{{ booking.pk }}</h1>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Main Info -->
+    <div class="lg:col-span-2 space-y-6">
+        <!-- Status Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex justify-between items-start mb-4">
+                <h2 class="text-lg font-semibold">Booking Details</h2>
+                <span class="inline-flex px-3 py-1 text-sm rounded-full 
+                    {% if booking.status == 'paid' or booking.status == 'active' %}bg-green-100 text-green-800
+                    {% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800
+                    {% elif booking.status == 'cancelled' %}bg-red-100 text-red-800
+                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                    {{ booking.get_status_display }}
+                </span>
+            </div>
+            
+            <dl class="grid grid-cols-2 gap-4">
+                <div>
+                    <dt class="text-sm text-gray-500">Tariff</dt>
+                    <dd class="font-medium">{{ booking.tariff.name }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm text-gray-500">Location</dt>
+                    <dd class="font-medium">{{ booking.tariff.location.name }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm text-gray-500">Storage Unit</dt>
+                    <dd class="font-medium font-mono">{{ booking.storage_unit.full_code|default:"Not assigned" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm text-gray-500">Period</dt>
+                    <dd class="font-medium">{{ booking.period.get_period_type_display }} ({{ booking.period.duration_value }} {{ booking.period.get_duration_type_display }})</dd>
+                </div>
+                <div>
+                    <dt class="text-sm text-gray-500">Start Date</dt>
+                    <dd class="font-medium">{{ booking.start_date|date:"d M Y" }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm text-gray-500">End Date</dt>
+                    <dd class="font-medium">{{ booking.end_date|date:"d M Y" }}</dd>
+                </div>
+            </dl>
+        </div>
+
+        {% if booking.status == 'expired' %}
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
+            <p class="text-red-800 font-medium mb-2">⚠️ This booking has expired but the unit is not released yet.</p>
+            <form method="post" action="{% url 'backoffice:booking_release' booking.pk %}"
+                  onsubmit="return confirm('Release unit {{ booking.storage_unit.full_code }}? Make sure the unit is empty!');">
+                {% csrf_token %}
+                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                    Release Unit
+                </button>
+            </form>
+        </div>
+        {% endif %}
+
+        <!-- Payment Info -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">Payment</h2>
+            <dl class="space-y-3">
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Period Price</dt>
+                    <dd class="font-medium">AED {{ booking.price_aed }}</dd>
+                </div>
+                {% if booking.addons_aed %}
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Addons</dt>
+                    <dd class="font-medium">AED {{ booking.addons_aed }}</dd>
+                </div>
+                {% endif %}
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Deposit</dt>
+                    <dd class="font-medium">AED {{ booking.deposit_aed }}</dd>
+                </div>
+                <div class="flex justify-between border-t pt-3">
+                    <dt class="text-gray-900 font-semibold">Total</dt>
+                    <dd class="font-bold text-lg">AED {{ booking.total_aed }}</dd>
+                </div>
+            </dl>
+            
+            {% if booking.paid_at %}
+            <div class="mt-4 pt-4 border-t">
+                <p class="text-sm text-gray-500">Paid at: {{ booking.paid_at|date:"d M Y H:i" }}</p>
+                {% if booking.stripe_payment_id %}
+                <p class="text-sm text-gray-500">Stripe ID: {{ booking.stripe_payment_id }}</p>
+                {% endif %}
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Addons -->
+        {% if booking.booking_addons.exists %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">Addons</h2>
+            <ul class="space-y-2">
+                {% for ba in booking.booking_addons.all %}
+                <li class="flex justify-between">
+                    <span>{{ ba.addon.name }}</span>
+                    <span class="font-medium">AED {{ ba.price_aed }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <!-- Extensions -->
+        {% if booking.extensions.exists %}
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">Extensions</h2>
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-sm text-gray-500">
+                        <th class="pb-2">ID</th>
+                        <th class="pb-2">Period</th>
+                        <th class="pb-2">Status</th>
+                        <th class="pb-2">Total</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y">
+                    {% for ext in booking.extensions.all %}
+                    <tr>
+                        <td class="py-2"><a href="{% url 'backoffice:booking_detail' ext.pk %}" class="text-blue-600 hover:underline">#{{ ext.pk }}</a></td>
+                        <td class="py-2">{{ ext.start_date|date:"d M" }} → {{ ext.end_date|date:"d M Y" }}</td>
+                        <td class="py-2">{{ ext.get_status_display }}</td>
+                        <td class="py-2">AED {{ ext.total_aed }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Sidebar -->
+    <div class="space-y-6">
+        <!-- User Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">Customer</h2>
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-lg font-bold">
+                    {{ booking.user.first_name|slice:":1" }}{{ booking.user.last_name|slice:":1" }}
+                </div>
+                <div>
+                    <p class="font-medium">{{ booking.user.get_full_name|default:"No name" }}</p>
+                    <p class="text-sm text-gray-500">{{ booking.user.email }}</p>
+                </div>
+            </div>
+            {% if booking.user.phone %}
+            <p class="text-sm text-gray-600 mb-2">📞 {{ booking.user.phone }}</p>
+            {% endif %}
+            <a href="{% url 'backoffice:user_detail' booking.user.pk %}" class="text-blue-600 hover:underline text-sm">View profile →</a>
+        </div>
+
+        <!-- Timestamps -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-lg font-semibold mb-4">Timeline</h2>
+            <dl class="space-y-3 text-sm">
+                <div>
+                    <dt class="text-gray-500">Created</dt>
+                    <dd>{{ booking.created_at|date:"d M Y H:i" }}</dd>
+                </div>
+                {% if booking.paid_at %}
+                <div>
+                    <dt class="text-gray-500">Paid</dt>
+                    <dd>{{ booking.paid_at|date:"d M Y H:i" }}</dd>
+                </div>
+                {% endif %}
+                <div>
+                    <dt class="text-gray-500">Last Updated</dt>
+                    <dd>{{ booking.updated_at|date:"d M Y H:i" }}</dd>
+                </div>
+            </dl>
+        </div>
+    </div>
+</div>
+{% endblock %}

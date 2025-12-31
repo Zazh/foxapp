@@ -1,0 +1,142 @@
+<!-- Модальное upgrade -->
+<div class="modal-overlay" id="modal-upgrade-plane">
+  <div class="modal flex flex-col gap-8">
+    <div class="modal-header px-4 md:px-6">
+      <div class="flex flex-col">
+        <div class="pb-1">
+          <h3 class="h2 text-center">Select Plane</h3>
+        </div>
+        <div>
+          <p class="text-center leading-tight font-medium text-gray-700">After you select a tariff, a new subscription time <span class="md:block">will be added to your tariff date</span></p>
+        </div>
+      </div>
+      <button class="modal-close [ absolute right-4 top-4 ] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body px-4 md:px-6 flex flex-col gap-8">
+      <div class="flex flex-col gap-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <label class="pricing-card">
+            <input type="radio" name="period" value="1" class="sr-only peer" data-price="200" data-discount="0">
+            <span class="pricing-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                        <span class="pricing-card-check">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </span>
+                        <span class="pricing-card-content">
+                            <span class="text-base font-bold text-black">1 month</span>
+                            <span class="text-gray-600 text-sm mt-1">Perfect for short stays and trial use</span>
+                        </span>
+                        <span class="pricing-card-price">
+                            <span class="text-sm font-bold text-black">AED 200</span>
+                            <span class="text-sm font-bold text-orange-500">/ 5% off</span>
+                        </span>
+                    </span>
+          </label>
+
+          <label class="pricing-card">
+            <input type="radio" name="period" value="3" class="sr-only peer" data-price="1000" data-discount="5" data-original="1050" checked>
+            <span class="pricing-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                        <span class="pricing-card-check">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </span>
+                        <span class="pricing-card-content">
+                            <span class="text-base font-bold text-black">1 month</span>
+                            <span class="text-gray-600 text-sm mt-1">Perfect for short stays and trial use</span>
+                        </span>
+                        <span class="pricing-card-price">
+                            <span class="text-sm font-bold text-black">AED 200</span>
+                        </span>
+                    </span>
+          </label>
+
+          <label class="pricing-card">
+            <input type="radio" name="period" value="6" class="sr-only peer" data-price="1500" data-discount="10" data-original="1667">
+            <span class="pricing-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                        <span class="pricing-card-check">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </span>
+                        <span class="pricing-card-content">
+                            <span class="text-base font-bold text-black">1 month</span>
+                            <span class="text-gray-600 text-sm mt-1">Perfect for short stays and trial use</span>
+                        </span>
+                        <span class="pricing-card-price">
+                            <span class="text-sm font-bold text-black">AED 200</span>
+                        </span>
+                    </span>
+          </label>
+
+          <label class="pricing-card">
+            <input type="radio" name="period" value="12" class="sr-only peer" data-price="2000" data-discount="20" data-original="2500">
+            <span class="pricing-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                        <span class="pricing-card-check">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </span>
+                        <span class="pricing-card-content">
+                            <span class="text-base font-bold text-black">1 month</span>
+                            <span class="text-gray-600 text-sm mt-1">Perfect for short stays and trial use</span>
+                        </span>
+                        <span class="pricing-card-price">
+                            <span class="text-sm font-bold text-black">AED 200</span>
+                        </span>
+                    </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="flex flex-col gap-4">
+        <div>
+          <h2 class="text-sm text-black font-bold">Additional services</h2>
+        </div>
+        <div class="flex flex-col gap-3">
+          <label class="addon-card">
+            <input type="checkbox" name="addons" value="insurance" class="sr-only peer" data-price="1500">
+            <span class="addon-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                            <span class="addon-card-checkbox">
+                                <svg class="w-4 h-4 opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                                </svg>
+                            </span>
+                            <span class="addon-card-content">
+                                <span class="text-base font-bold text-black">Insurance</span>
+                                <span class="text-gray-600 text-sm">Valid for the entire period</span>
+                            </span>
+                            <span class="addon-card-price">
+                                <span class="text-base font-bold text-gray-800">+ AED 1,500</span>
+                            </span>
+                        </span>
+          </label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer bg-black/5">
+      <!-- Итого -->
+      <div class="flex flex-col gap-6 flex-wrap px-4 md:px-6 pb-4">
+        <div>
+          <ul class="flex justify-between items-center gap-2 font-medium">
+            <li class="uppercase tracking-wider text-gray-600 text-xs font-bold">Total</li>
+            <li class="uppercase text-base text-black font-bold">
+              <span id="total-price">AED 1,000</span>
+              <s class="text-sm text-gray-600 hidden" id="original-price">/ AED 1,050</s>
+            </li>
+          </ul>
+        </div>
+        <div>
+          <button class="btn-default primary lg justify-center w-full flex">
+            Upgrade
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

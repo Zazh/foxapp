@@ -1,0 +1,34 @@
+<!-- Модальное Delete Account -->
+<div class="modal-overlay" id="modal-delete-account">
+  <div class="modal flex flex-col gap-8">
+    <div class="modal-header px-4 md:px-6">
+      <div class="flex flex-col">
+        <div class="pb-1">
+          <h3 class="h2 text-center">Delete Account</h3>
+        </div>
+        <div>
+          <p class="text-center leading-tight font-medium text-gray-700">Confirm deletion of your profile. According to our policy, we will delete data related to you except for payment histories and receipts</p>
+        </div>
+      </div>
+      <button type="button" class="modal-close [ absolute right-4 top-4 ] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-footer">
+      <div class="flex flex-col gap-4 flex-wrap px-4 md:px-6 pb-4 pt-2">
+        <div>
+          <button type="button" id="btn-delete-account" class="btn-default danger lg justify-center w-full flex">
+            Yes, Delete my account
+          </button>
+        </div>
+        <div class="flex justify-center">
+          <button type="button" class="modal-close text-gray-700 hover:text-gray-900 py-2 font-bold text-center">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

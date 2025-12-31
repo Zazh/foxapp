@@ -1,0 +1,76 @@
+.benefits-card {
+    @apply bg-white shadow-card rounded-2xl;
+}
+
+.pricing-card {
+    @apply cursor-pointer block;
+}
+
+.pricing-card-inner {
+    @apply flex flex-col p-4 bg-white border border-gray-200 rounded-lg
+    transition-all relative h-full;
+}
+
+.pricing-card:hover .pricing-card-inner {
+    @apply border-gray-400;
+}
+
+.pricing-card-check {
+    @apply absolute top-4 right-4 w-6 h-6 rounded-full bg-green-500
+    text-white flex items-center justify-center
+    opacity-0 scale-75 transition-all;
+}
+
+.pricing-card input:checked ~ .pricing-card-inner .pricing-card-check {
+    @apply opacity-100 scale-100;
+}
+
+.pricing-card-content {
+    @apply flex flex-col pr-10;
+}
+
+.pricing-card-price {
+    @apply flex items-center mt-3 pt-2 border-t gap-2 border-gray-200;
+}
+
+.addon-card {
+    @apply cursor-pointer block;
+}
+
+.addon-card-inner {
+    @apply flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-lg
+    transition-all relative;
+}
+
+.addon-card:hover .addon-card-inner {
+    @apply border-gray-400;
+}
+
+.addon-card-checkbox {
+    @apply w-6 h-6 border-2 border-gray-300 rounded flex items-center justify-center
+    transition-all flex-shrink-0;
+}
+
+.addon-card input:checked ~ .addon-card-inner .addon-card-checkbox {
+    @apply border-green-500 bg-green-500 text-white;
+}
+
+.addon-card input:checked ~ .addon-card-inner .addon-card-checkbox svg {
+    @apply opacity-100;
+}
+
+.addon-card-content {
+    @apply flex flex-col flex-1;
+}
+
+.addon-card-price {
+    @apply flex-shrink-0;
+}
+
+.base-card {
+    @apply bg-white rounded-lg py-2 px-4 border border-gray-200;
+}
+
+.base-card .base-card-footer {
+    @apply flex flex-row items-center justify-between gap-2 md:gap-4 mt-3 pt-3 border-t border-gray-200;
+}

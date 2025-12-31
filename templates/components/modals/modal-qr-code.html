@@ -1,0 +1,71 @@
+<!-- Модальное QR Code -->
+<div class="modal-overlay" id="modal-qr-code">
+  <div class="modal flex flex-col gap-6 max-w-sm">
+    <div class="modal-header px-4 md:px-6 border-b border-gray-100 pb-4">
+      <div class="flex flex-col">
+        <h3 class="text-base font-bold text-center">Unit Number №<span id="qr-unit-number">2032</span></h3>
+      </div>
+      <button type="button" class="modal-close [ absolute right-4 top-4 ] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body px-4 md:px-6 flex flex-col items-center gap-4">
+      <!-- QR контейнер -->
+      <div class="bg-[#FDEFD3] p-6 rounded-sm">
+        <canvas id="qr-canvas" width="200" height="200"></canvas>
+      </div>
+      <!-- Таймер -->
+      <p id="qr-timer" class="text-gray-700 font-bold text-sm">
+        This code is valid for <span id="qr-minutes">15</span> minutes
+      </p>
+    </div>
+    <div class="modal-footer">
+      <div class="flex flex-col gap-4 flex-wrap px-4 md:px-6 pb-4 pt-2">
+        <div>
+          <button type="button" id="btn-share-guest" class="btn-default black lg justify-center w-full flex">
+            Share guest
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное Guest QR Code -->
+<div class="modal-overlay" id="modal-guest-qr">
+  <div class="modal flex flex-col gap-6 max-w-sm">
+    <div class="modal-header px-4 md:px-6 border-b border-gray-100 pb-4">
+      <div class="flex flex-col">
+        <h3 class="text-base font-bold text-center">Guest Access Unit №<span id="guest-unit-number">2032</span></h3>
+      </div>
+      <button type="button" class="modal-close [ absolute right-4 top-4 ] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body px-4 md:px-6 flex flex-col items-center gap-4">
+      <div class="bg-[#FDEFD3] p-6 rounded-sm">
+        <canvas id="guest-qr-canvas" width="200" height="200"></canvas>
+      </div>
+      <div class="text-center">
+        <p class="text-black font-bold">Valid for 24 hours <br> Single use only</p>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <div class="flex flex-col gap-4 flex-wrap px-4 md:px-6 pb-4 pt-2">
+        <div>
+          <button type="button" id="btn-copy-guest-link" class="btn-default black lg justify-center w-full flex items-center gap-2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+              <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+            </svg>
+            Copy link
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

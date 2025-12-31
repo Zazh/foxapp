@@ -1,0 +1,247 @@
+{% extends 'cabinet/base.html' %}
+{% load static %}
+{% load i18n %}
+
+
+{% block title %}{% trans "Dashboard" %}{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+<script src="{% static 'dist/js/qr.js' %}"></script>
+{% endblock %}
+
+{% block content %}
+    {% csrf_token %}
+
+<section class="grid md:grid-cols-12 gap-x-4 px-4 md:px-4 min-h-[80vh]">
+    <!-- Сайдбар / табы -->
+    <div class="lg:col-span-3 xl:col-span-4 col-span-full lg:border-r border-gray-100 overflow-hidden -mx-4 md:mx-0">
+        <!-- Фиксированная навигация (скрыта по умолчанию) -->
+        <nav id="fixed-nav" class="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-100 -translate-y-full transition-transform duration-300 lg:hidden">
+            <ul class="flex overflow-x-auto gap-4 py-3 px-4 scrollbar-hide">
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "History" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Billing" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Settings" %}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="sticky top-0 bg-white z-10 lg:static border-b lg:border-0 border-gray-100">
+            <ul class="flex flex-row overflow-x-auto gap-4 py-3 px-4 md:px-0
+                       lg:flex-col lg:overflow-visible lg:gap-2 lg:pt-6 lg:pr-16 lg:text-right
+                       scrollbar-hide">
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "History" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Billing" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Settings" %}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="lg:col-span-6 xl:col-span-4 col-span-full">
+        <div class="flex flex-col gap-6 py-12">
+            <div>
+                <h1 class="h1 leading-tight">{% trans "Dashboard" %}</h1>
+            </div>
+
+            <!-- Pending Payments Alert -->
+            {% if pending_bookings %}
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <div class="flex items-start gap-3">
+                    <svg class="w-5 h-5 text-yellow-600 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                    <div class="flex-1">
+                        <h3 class="font-bold text-yellow-800">{% trans "Pending Payment" %}</h3>
+                        <p class="text-sm text-yellow-700 mt-1">
+                            {% trans "You have bookings awaiting payment." %}
+                        </p>
+                        <div class="flex flex-col gap-2 mt-3">
+                            {% for booking in pending_bookings %}
+                            <a href="{% url 'booking_mock_payment' booking.pk %}" class="text-sm font-bold text-yellow-800 hover:text-orange-500 underline">
+                                {{ booking.tariff.name }} — {{ booking.total_aed }} AED →
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="flex flex-col gap-4">
+                <div>
+                    <h2 class="h4 font-bold text-gray-700">{% trans "My unit" %}</h2>
+                </div>
+
+            <!--
+                <div class="base-card">
+                    <div class="flex justify-between items-center flex-wrap gap-2 pt-2 pb-1">
+                        <div>
+                            <h4 class="h4 font-bold">Compact Locker</h4>
+                        </div>
+                        <div>
+                            <span class="list-label primary">Storage</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <p class="text-gray-600 leading-tight font-medium text-sm">
+                            Dubai Street: Al Sa'ada Street Building Number: <span class="md:block text-orange-500 font-bold">Business Tower, Dubai Lorem</span>
+                        </p>
+                    </div>
+
+                    <div class="base-card-footer pb-2">
+                        <span class="flex items-center gap-2 text-sm text-gray-600 font-bold">
+                            Expires Dec 26, 2025
+                        </span>
+                        <div class="flex gap-3">
+                            <button class="btn-card outline-secondary">Manage</button>
+                            <button class="btn-card default btn-show-qr" data-unit="2032">Open unit</button>
+                        </div>
+                    </div>
+                </div>
+                -->
+
+                {% if has_active %}
+                    {% for booking in active_bookings %}
+                    <div class="base-card">
+                    <div class="flex justify-between items-center flex-wrap gap-2 pt-2 pb-1">
+                        <div>
+                            <h4 class="h4 font-bold">{{ booking.tariff.name }}</h4>
+                        </div>
+                        <div>
+                            {% if booking.tariff.service.service_type == 'auto' %}
+                                <span class="list-label blue">{% trans "Auto" %}</span>
+                            {% else %}
+                                <span class="list-label primary">{% trans "Storage" %}</span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="pt-2">
+                        <p class="text-gray-600 leading-tight font-medium text-sm">
+                            {{ booking.tariff.location.street }}, {{ booking.tariff.location.building }}:
+                            <span class="md:block {% if booking.tariff.service.service_type == 'auto' %}text-blue-500{% else %}text-orange-500{% endif %} font-bold">
+                                   {% if booking.storage_unit %}
+                                        {% translate 'Unit ' %} {{ booking.storage_unit.full_code }}
+                                    {% endif %}
+                            </span>
+                        </p>
+                    </div>
+
+                    <div class="base-card-footer pb-2">
+                        <span class="flex items-center gap-2 text-sm {% if booking.days_remaining <= 14 %}text-red-500{% else %}text-gray-600{% endif %} font-bold">
+                            {% trans "Expires" %} {{ booking.end_date|date:"M d, Y" }}
+                        </span>
+                        <div class="flex gap-3">
+                            <a href="{% url 'cabinet-booking-detail' booking.pk %}" class="btn-card outline-secondary">Manage</a>
+                            <button class="btn-card default btn-show-qr" data-booking="{{ booking.pk }}">
+                                {% trans "Open unit" %}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-gray-500">{% trans "You don't have any active rentals." %}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Модальное QR Code -->
+<div class="modal-overlay" id="modal-qr-code">
+  <div class="modal flex flex-col gap-6 max-w-sm">
+    <div class="modal-header px-4 md:px-6 border-b border-gray-100 pb-4">
+      <div class="flex flex-col">
+        <h3 class="text-base font-bold text-center">Unit <span id="qr-unit-number">0</span></h3>
+      </div>
+      <button type="button" class="modal-close [ absolute right-4 top-4 ] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body px-4 md:px-6 flex flex-col items-center gap-4">
+      <!-- QR контейнер -->
+      <div class="bg-[#FDEFD3] p-6 rounded-sm">
+        <canvas id="qr-canvas" width="200" height="200"></canvas>
+      </div>
+      <!-- Таймер -->
+      <p id="qr-timer" class="text-gray-700 font-bold text-sm">
+        This code is valid for <span id="qr-minutes">15</span> minutes
+      </p>
+    </div>
+    <div class="modal-footer">
+      <div class="flex flex-col gap-4 flex-wrap px-4 md:px-6 pb-4 pt-2">
+        <div>
+          <button type="button" id="btn-share-guest" class="btn-default black lg justify-center w-full flex">
+            Share guest
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Модальное Guest QR Code -->
+<div class="modal-overlay" id="modal-guest-qr">
+    <div class="modal flex flex-col gap-6 max-w-sm">
+        <div class="modal-header px-4 md:px-6 border-b border-gray-100 pb-4">
+            <div class="flex flex-col">
+                <h3 class="text-base font-bold text-center">{% trans "Guest Access" %}<span id="guest-unit-number">—</span></h3>
+            </div>
+            <button type="button" class="modal-close [ absolute right-4 top-4 ] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                    <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="modal-body px-4 md:px-6 flex flex-col items-center gap-4">
+            <div class="bg-[#FDEFD3] p-6 rounded-sm">
+                <canvas id="guest-qr-canvas" width="200" height="200"></canvas>
+            </div>
+            <div class="text-center pb-8">
+                <p class="text-black font-bold">
+                    {% trans "Valid for" %} <span id="guest-expires-in">24</span> {% trans "hours" %}
+                </p>
+                <p class="text-gray-600 text-sm mt-1">{% trans "Single use only" %}</p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

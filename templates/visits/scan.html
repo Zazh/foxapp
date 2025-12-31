@@ -1,0 +1,295 @@
+{% load static i18n %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% trans "Scan QR Code" %} | FoxBox Staff</title>
+    <link rel="stylesheet" href="{% static 'dist/css/styles.css' %}">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    {% csrf_token %}
+
+    <div class="max-w-lg mx-auto p-4 py-8">
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-2xl font-bold text-gray-900">{% trans "FoxBox Scanner" %}</h1>
+            <p class="text-gray-600 mt-1">{% trans "Scan customer QR code to grant access" %}</p>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex mb-6 bg-white rounded-lg p-1 shadow-sm">
+            <button id="tab-camera" class="flex-1 py-2 px-4 rounded-md text-sm font-bold bg-black text-white">
+                {% trans "Camera" %}
+            </button>
+            <button id="tab-manual" class="flex-1 py-2 px-4 rounded-md text-sm font-bold text-gray-700">
+                {% trans "Manual" %}
+            </button>
+        </div>
+
+        <!-- Camera Scanner -->
+        <div id="panel-camera" class="bg-white rounded-lg shadow-sm p-4 mb-6">
+            <div id="qr-reader" class="w-full rounded-lg overflow-hidden"></div>
+            <p class="text-center text-gray-500 text-sm mt-4">{% trans "Point camera at QR code" %}</p>
+        </div>
+
+        <!-- Manual Input -->
+        <div id="panel-manual" class="bg-white rounded-lg shadow-sm p-4 mb-6 hidden">
+            <form id="manual-form" class="flex flex-col gap-4">
+                <div class="input-floating">
+                    <input type="text" id="token-input" name="token" placeholder=" " required>
+                    <label for="token-input">{% trans "Enter token" %}</label>
+                </div>
+                <button type="submit" class="btn-default primary lg justify-center w-full">
+                    {% trans "Verify" %}
+                </button>
+            </form>
+        </div>
+
+        <!-- Guest Name Modal (hidden by default) -->
+        <div id="guest-name-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+            <div class="bg-white rounded-lg p-6 w-full max-w-sm">
+                <h3 class="text-lg font-bold mb-4">{% trans "Guest Access" %}</h3>
+                <p class="text-gray-600 text-sm mb-4">{% trans "Please enter the guest's name to grant access." %}</p>
+                <form id="guest-name-form" class="flex flex-col gap-4">
+                    <input type="hidden" id="guest-token" name="token">
+                    <div class="input-floating">
+                        <input type="text" id="guest-name-input" name="guest_name" placeholder=" " required>
+                        <label for="guest-name-input">{% trans "Guest Name" %} <span class="text-red-500">*</span></label>
+                    </div>
+                    <div class="flex gap-2">
+                        <button type="button" id="cancel-guest" class="btn-default outline flex-1 justify-center">
+                            {% trans "Cancel" %}
+                        </button>
+                        <button type="submit" class="btn-default primary flex-1 justify-center">
+                            {% trans "Grant Access" %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Result -->
+        <div id="result" class="hidden rounded-lg p-6 text-center mb-6">
+            <div id="result-icon" class="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"></div>
+            <h3 id="result-title" class="text-xl font-bold mb-2"></h3>
+            <div id="result-details" class="text-sm"></div>
+        </div>
+
+        <!-- Recent Scans -->
+        <div class="bg-white rounded-lg shadow-sm p-4">
+            <h3 class="font-bold text-gray-900 mb-3">{% trans "Recent Scans" %}</h3>
+            <ul id="recent-scans" class="divide-y divide-gray-100">
+                <li class="py-3 text-gray-500 text-sm">{% trans "No scans yet" %}</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    let html5QrCode = null;
+    let pendingToken = null;
+
+    // === Tabs ===
+    document.getElementById('tab-camera').addEventListener('click', () => {
+        document.getElementById('tab-camera').classList.add('bg-black', 'text-white');
+        document.getElementById('tab-camera').classList.remove('text-gray-700');
+        document.getElementById('tab-manual').classList.remove('bg-black', 'text-white');
+        document.getElementById('tab-manual').classList.add('text-gray-700');
+        document.getElementById('panel-camera').classList.remove('hidden');
+        document.getElementById('panel-manual').classList.add('hidden');
+        startCamera();
+    });
+
+    document.getElementById('tab-manual').addEventListener('click', () => {
+        document.getElementById('tab-manual').classList.add('bg-black', 'text-white');
+        document.getElementById('tab-manual').classList.remove('text-gray-700');
+        document.getElementById('tab-camera').classList.remove('bg-black', 'text-white');
+        document.getElementById('tab-camera').classList.add('text-gray-700');
+        document.getElementById('panel-manual').classList.remove('hidden');
+        document.getElementById('panel-camera').classList.add('hidden');
+        stopCamera();
+    });
+
+    // === Camera Scanner ===
+    function startCamera() {
+        if (html5QrCode) return;
+
+        html5QrCode = new Html5Qrcode("qr-reader");
+        html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            onScanSuccess,
+            () => {}
+        ).catch(err => {
+            console.error("Camera error:", err);
+            document.getElementById('qr-reader').innerHTML = `
+                <div class="p-8 text-center text-red-500">
+                    <p class="font-bold">{% trans "Camera access denied" %}</p>
+                    <p class="text-sm mt-2">{% trans "Please use manual input" %}</p>
+                </div>
+            `;
+        });
+    }
+
+    function stopCamera() {
+        if (html5QrCode) {
+            html5QrCode.stop().catch(() => {});
+            html5QrCode = null;
+        }
+    }
+
+    function onScanSuccess(token) {
+        // Остановить сканирование временно
+        stopCamera();
+        verifyToken(token);
+    }
+
+    // === Manual Form ===
+    document.getElementById('manual-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const token = document.getElementById('token-input').value.trim();
+        if (token) {
+            verifyToken(token);
+        }
+    });
+
+    // === Verify Token ===
+    async function verifyToken(token, guestName = '') {
+        hideResult();
+
+        try {
+            const body = `token=${encodeURIComponent(token)}${guestName ? `&guest_name=${encodeURIComponent(guestName)}` : ''}`;
+
+            const response = await fetch('/visit/scan/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: body
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showResult('success', '{% trans "Access Granted" %}', data.visit);
+                addRecentScan(data.visit);
+                document.getElementById('token-input').value = '';
+                hideGuestModal();
+            } else if (data.require_guest_name) {
+                // Показать модалку для ввода имени гостя
+                showGuestModal(token, data.unit);
+            } else {
+                showResult('error', '{% trans "Access Denied" %}', { error: data.error });
+            }
+        } catch (error) {
+            showResult('error', '{% trans "Error" %}', { error: '{% trans "Connection failed" %}' });
+        }
+
+        // Перезапустить камеру через 3 секунды
+        setTimeout(() => {
+            if (!document.getElementById('panel-camera').classList.contains('hidden')) {
+                startCamera();
+            }
+        }, 3000);
+    }
+
+    // === Guest Name Modal ===
+    function showGuestModal(token, unit) {
+        pendingToken = token;
+        document.getElementById('guest-token').value = token;
+        document.getElementById('guest-name-modal').classList.remove('hidden');
+        document.getElementById('guest-name-input').focus();
+    }
+
+    function hideGuestModal() {
+        document.getElementById('guest-name-modal').classList.add('hidden');
+        document.getElementById('guest-name-input').value = '';
+        pendingToken = null;
+    }
+
+    document.getElementById('cancel-guest').addEventListener('click', () => {
+        hideGuestModal();
+        // Перезапустить камеру
+        if (!document.getElementById('panel-camera').classList.contains('hidden')) {
+            startCamera();
+        }
+    });
+
+    document.getElementById('guest-name-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const guestName = document.getElementById('guest-name-input').value.trim();
+        if (guestName && pendingToken) {
+            verifyToken(pendingToken, guestName);
+        }
+    });
+
+    // === Result Display ===
+    function showResult(type, title, data) {
+        const result = document.getElementById('result');
+        const icon = document.getElementById('result-icon');
+        const titleEl = document.getElementById('result-title');
+        const details = document.getElementById('result-details');
+
+        result.classList.remove('hidden', 'bg-green-50', 'bg-red-50');
+
+        if (type === 'success') {
+            result.classList.add('bg-green-50');
+            icon.innerHTML = `<svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>`;
+            icon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-green-100';
+            titleEl.className = 'text-xl font-bold mb-2 text-green-800';
+            details.innerHTML = `
+                <p class="text-green-700"><strong>{% trans "Unit" %}:</strong> ${data.unit}</p>
+                <p class="text-green-700"><strong>{% trans "Visitor" %}:</strong> ${data.visitor_name}</p>
+                <p class="text-green-700"><strong>{% trans "Type" %}:</strong> ${data.visitor_type === 'owner' ? '{% trans "Owner" %}' : '{% trans "Guest" %}'}</p>
+            `;
+        } else {
+            result.classList.add('bg-red-50');
+            icon.innerHTML = `<svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>`;
+            icon.className = 'w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center bg-red-100';
+            titleEl.className = 'text-xl font-bold mb-2 text-red-800';
+            details.innerHTML = `<p class="text-red-700">${data.error}</p>`;
+        }
+
+        titleEl.textContent = title;
+    }
+
+    function hideResult() {
+        document.getElementById('result').classList.add('hidden');
+    }
+
+    // === Recent Scans ===
+    const recentScans = [];
+
+    function addRecentScan(visit) {
+        recentScans.unshift(visit);
+        if (recentScans.length > 5) recentScans.pop();
+        renderRecentScans();
+    }
+
+    function renderRecentScans() {
+        const list = document.getElementById('recent-scans');
+        if (recentScans.length === 0) {
+            list.innerHTML = `<li class="py-3 text-gray-500 text-sm">{% trans "No scans yet" %}</li>`;
+            return;
+        }
+
+        list.innerHTML = recentScans.map(scan => `
+            <li class="py-3 flex justify-between items-center">
+                <div>
+                    <p class="font-bold text-gray-900">${scan.unit}</p>
+                    <p class="text-sm text-gray-500">${scan.visitor_name} (${scan.visitor_type === 'owner' ? '{% trans "Owner" %}' : '{% trans "Guest" %}'})</p>
+                </div>
+                <span class="text-xs text-gray-400">${new Date(scan.visited_at).toLocaleTimeString()}</span>
+            </li>
+        `).join('');
+    }
+
+    // === Init ===
+    startCamera();
+    </script>
+</body>
+</html>

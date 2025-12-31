@@ -1,0 +1,141 @@
+{% extends 'cabinet/base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans "Billing" %}{% endblock %}
+
+{% block content %}
+<section class="grid md:grid-cols-12 gap-x-4 px-4 md:px-4 min-h-[80vh]">
+    <!-- Сайдбар / табы -->
+    <div class="lg:col-span-3 xl:col-span-4 col-span-full lg:border-r border-gray-100 overflow-hidden -mx-4 md:mx-0">
+        <!-- Фиксированная навигация (скрыта по умолчанию) -->
+        <nav id="fixed-nav" class="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-100 -translate-y-full transition-transform duration-300 lg:hidden">
+            <ul class="flex overflow-x-auto gap-4 py-3 px-4 scrollbar-hide">
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "History" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Billing" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Settings" %}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <nav class="sticky top-0 bg-white z-10 lg:static border-b lg:border-0 border-gray-100">
+            <ul class="flex flex-row overflow-x-auto gap-4 py-3 px-4 md:px-0
+                       lg:flex-col lg:overflow-visible lg:gap-2 lg:pt-6 lg:pr-16 lg:text-right
+                       scrollbar-hide">
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Dashboard" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "History" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                        {% trans "Billing" %}
+                    </a>
+                </li>
+                <li class="shrink-0">
+                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
+                        {% trans "Settings" %}
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+
+    <div class="lg:col-span-8 xl:col-span-6 col-span-full">
+        <div class="flex flex-col gap-6 py-12">
+            <div>
+                <h1 class="h1 leading-tight">{% trans "Billing" %}</h1>
+            </div>
+
+            <!-- Pending Payments -->
+            {% if pending_payments %}
+            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <h2 class="font-bold text-yellow-800 mb-3">{% trans "Pending Payments" %}</h2>
+                {% for booking in pending_payments %}
+                <div class="flex justify-between items-center py-2 {% if not forloop.last %}border-b border-yellow-200{% endif %}">
+                    <div>
+                        <p class="font-medium">{{ booking.tariff.name }}</p>
+                        <p class="text-sm text-yellow-700">{{ booking.period.name }}</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <span class="font-bold">AED {{ booking.total_aed|floatformat:0 }}</span>
+                        <a href="{% url 'booking_checkout' booking.pk %}" class="btn-card default">{% trans "Pay now" %}</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Invoices -->
+            <div class="flex flex-col gap-2">
+                <div class="py-4">
+                    <h2 class="h4 font-bold text-gray-700">{% trans "Invoices" %}</h2>
+                </div>
+
+                {% if payments %}
+                <!-- Header -->
+                <div class="flex gap-1 pb-2">
+                    <div class="flex-1 font-bold text-sm">{% trans "Date" %}</div>
+                    <div class="flex-1 font-bold text-sm hidden md:block">{% trans "Description" %}</div>
+                    <div class="flex-1 font-bold text-sm">{% trans "Total" %}</div>
+                    <div class="flex-1 font-bold text-sm">
+                        <span class="hidden md:block">{% trans "Status" %}</span>
+                    </div>
+                </div>
+
+                <!-- Payments -->
+                {% for payment in payments %}
+                <div class="flex gap-1 py-2 border-b border-gray-100 items-center">
+                    <div class="flex-1 text-sm font-medium">{{ payment.paid_at|date:"d.m.Y" }}</div>
+                    <div class="flex-1 text-sm hidden md:block">
+                        <p class="font-medium">{{ payment.tariff.name }}</p>
+                        <p class="text-gray-500 text-xs">{{ payment.period.name }}{% if payment.parent_booking %} ({% trans "Extension" %}){% endif %}</p>
+                    </div>
+                    <div class="flex-1 text-sm font-medium">AED {{ payment.total_aed|floatformat:0 }}</div>
+                    <div class="flex-1 text-sm font-medium flex justify-between items-center">
+                        {% if payment.status == 'paid' or payment.status == 'active' %}
+                        <span class="text-green-600">{% trans "Paid" %}</span>
+                        {% elif payment.status == 'expired' %}
+                        <span class="text-orange-600">{% trans "Expired" %}</span>
+                        {% elif payment.status == 'completed' %}
+                        <span class="text-gray-600">{% trans "Completed" %}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <div class="text-center py-12">
+                    <div class="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
+                        <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
+                        </svg>
+                    </div>
+                    <p class="text-gray-500 font-medium">{% trans "No invoices yet" %}</p>
+                    <p class="text-gray-400 text-sm mt-1">{% trans "Your payment history will appear here" %}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

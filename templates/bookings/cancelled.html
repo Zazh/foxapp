@@ -1,0 +1,28 @@
+{% extends 'public/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Booking Cancelled" %}{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center px-4 py-20 bg-gray-50 -mb-8">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div class="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+            </svg>
+        </div>
+        
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Booking Cancelled" %}</h1>
+        <p class="text-gray-600 mb-6">{% trans "Your booking has been cancelled. No payment was processed." %}</p>
+        
+        <div class="space-y-3">
+            <a href="{% url 'service_detail' booking.tariff.service.service_type %}" class="block w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-orange-600 transition">
+                {% trans "Try Again" %}
+            </a>
+            <a href="{% url 'home' %}" class="block w-full bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition">
+                {% trans "Go Home" %}
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

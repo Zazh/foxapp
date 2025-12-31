@@ -1,0 +1,217 @@
+{% extends 'public/base.html' %}
+{% load static i18n %}
+
+{% block title %}{% trans "Contacts" %}{% endblock %}
+{% block header_class %}default{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block content %}
+<!-- Contact -->
+<section class="grid md:grid-cols-12 gap-x-4 px-4 border-b border-gray-100 pt-[8rem] lg:pt-[8rem]">
+    <div class="lg:col-span-3 col-span-full flex">
+        <div class="mt-auto flex-1">
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">Contact</p>
+        </div>
+    </div>
+    <div class="lg:col-span-5 col-span-full">
+        <h1 class="h1 leading-tight">Сontact us</h1>
+    </div>
+</section>
+
+<section class="grid md:grid-cols-12 gap-4 px-4 pt-6 pb-8">
+    <div class="col-span-full lg:col-span-5 lg:col-start-4 xl:col-start-4 xl:col-span-5 flex flex-col gap-8">
+        <div class="flex flex-col gap-8">
+            <div class="flex-1">
+                <h2 class="h3 text-black">
+                    Have a question about storage, access, or billing? Reach out to our team — we’ll help you choose the right unit and answer any service questions.
+                </h2>
+            </div>
+
+            <div>
+               <ul class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-6 [ text-sm md:text-base ]">
+                   <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                       <span class="text-black font-bold">Operated by</span>
+                       <span class="text-gray-700">Floxbox LLC</span>
+                   </li>
+                   <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                       <span class="text-black font-bold">TRN (VAT)</span>
+                       <span class="text-gray-700">832713</span>
+                   </li>
+                   <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                       <span class="text-black font-bold">Trade license no.</span>
+                       <span class="text-gray-700">341234 (issued by [DET / Free Zone Authority])</span>
+                   </li>
+                   <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                       <span class="text-black font-bold">Registered address</span>
+                       <span class="text-gray-700">Dubai Street: Al Sa'ada Street Building/Number: Business Tower,</span>
+                   </li>
+               </ul>
+            </div>
+        </div>
+    </div>
+</section>
+<!-- Contact -->
+
+
+<!-- Office -->
+{% with office=locations_headoffice.first %}
+{% if office %}
+<section class="grid md:grid-cols-12 gap-x-4 px-4 pt-6 pb-4 border-b border-gray-100">
+    <div class="lg:col-span-3 col-span-full flex">
+        <div class="mt-auto flex-1">
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">office</p>
+        </div>
+    </div>
+    <div class="lg:col-span-5 col-span-full">
+        <h1 class="h2 leading-tight">{% trans "Head office" %}</h1>
+    </div>
+</section>
+
+<section class="grid md:grid-cols-12 gap-4 px-4 pt-6 pb-8">
+    <div class="col-span-full lg:col-span-5 lg:col-start-4 xl:col-start-4 xl:col-span-5 flex flex-col gap-8">
+        <div>
+            <ul class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-6 [ text-sm md:text-base ]">
+                {% if office.phone %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">Phone</span>
+                    <a href="tel:" class="text-gray-700 hover:text-blue-600">+971 (4) 55 123 4567</a>
+                </li>
+                {% endif %}
+
+                {% if office.email %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">Email</span>
+                    <a href="mailto:" class="text-gray-700 hover:text-blue-600">hello@foxbox.ae</a>
+                </li>
+                {% endif %}
+
+                {% if office.working_hours %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">Working hours</span>
+                    <span class="text-gray-700">Mon–Fri, 9:00–18:00</span>
+                </li>
+                {% endif %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Address" %}</span>
+                    <span class="text-gray-700">{{ office.full_address }}</span>
+                </li>
+            </ul>
+        </div>
+        <div class="aspect-[16/9] overflow-hidden w-full rounded-sm bg-gray-200 relative  border-1 border-gray-100">
+            <div id="map" class="w-full absolute top-0 left-0 right-0 -bottom-4 z-0" data-coordinates="{{ office.coordinates }}"></div>
+        </div>
+    </div>
+</section>
+{% endif %}
+{% endwith %}
+<!-- Office -->
+
+<!-- Storage facilities -->
+{% if locations_storage %}
+<section class="grid md:grid-cols-12 gap-x-4 px-4 pt-6 pb-4 border-b border-gray-100">
+    <div class="lg:col-span-3 col-span-full flex">
+        <div class="mt-auto flex-1">
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">{% trans "Storage" %}</p>
+        </div>
+    </div>
+    <div class="lg:col-span-5 col-span-full">
+        <h2 class="h2 leading-tight">{% trans "Storage facilities" %}</h2>
+    </div>
+</section>
+
+{% for location in locations_storage %}
+<section class="grid md:grid-cols-12 gap-4 px-4 pt-6 pb-8">
+    <div class="col-span-full lg:col-span-5 lg:col-start-4 xl:col-start-4 xl:col-span-5 flex flex-col gap-8">
+        {% if locations_storage|length > 1 %}
+            <h3 class="h4 font-bold text-gray-900">{{ location.name }}</h3>
+        {% endif %}
+        <div>
+            <ul class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-6 [ text-sm md:text-base ]">
+                {% if location.phone %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Phone" %}</span>
+                    <a href="tel:{{ location.phone }}" class="text-gray-700 hover:text-blue-600">{{ location.phone }}</a>
+                </li>
+                {% endif %}
+                {% if location.email %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Email" %}</span>
+                    <a href="mailto:{{ location.email }}" class="text-gray-700 hover:text-blue-600">{{ location.email }}</a>
+                </li>
+                {% endif %}
+                {% if location.working_hours %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Working hours" %}</span>
+                    <span class="text-gray-700">{{ location.working_hours }}</span>
+                </li>
+                {% endif %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Address" %}</span>
+                    <span class="text-gray-700">{{ location.full_address }}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+{% endfor %}
+{% endif %}
+<!-- Storage -->
+
+<!-- Parking -->
+{% if locations_auto %}
+<section class="grid md:grid-cols-12 gap-x-4 px-4 pt-6 pb-4 border-b border-gray-100">
+    <div class="lg:col-span-3 col-span-full flex">
+        <div class="mt-auto flex-1">
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">Vehicle Parking</p>
+        </div>
+    </div>
+    <div class="lg:col-span-5 col-span-full">
+        <h1 class="h2 leading-tight">{% trans "Parking locations" %}</h1>
+    </div>
+</section>
+
+{% for location in locations_auto %}
+<section class="grid md:grid-cols-12 gap-4 px-4 pt-6 pb-8">
+    <div class="col-span-full lg:col-span-5 lg:col-start-4 xl:col-start-4 xl:col-span-5 flex flex-col gap-8">
+        {% if locations_auto|length > 1 %}
+        <h3 class="h4 font-bold text-gray-900">{{ location.name }}</h3>
+        {% endif %}
+        <div>
+            <ul class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-6 [ text-sm md:text-base ]">
+                {% if location.phone %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Phone" %}</span>
+                    <a href="tel:{{ location.phone }}" class="text-gray-700 hover:text-blue-600">{{ location.phone }}</a>
+                </li>
+                {% endif %}
+                {% if location.email %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Email" %}</span>
+                    <a href="mailto:{{ location.email }}" class="text-gray-700 hover:text-blue-600">{{ location.email }}</a>
+                </li>
+                {% endif %}
+                {% if location.working_hours %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Working hours" %}</span>
+                    <span class="text-gray-700">{{ location.working_hours }}</span>
+                </li>
+                {% endif %}
+                <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
+                    <span class="text-black font-bold">{% trans "Address" %}</span>
+                    <span class="text-gray-700">{{ location.full_address }}</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+{% endfor %}
+{% endif %}
+<!-- Parking -->
+{% endblock %}

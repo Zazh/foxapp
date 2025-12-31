@@ -1,0 +1,29 @@
+<!-- Check Email -->
+<div class="modal-overlay" id="modal-check-email">
+  <div class="modal flex flex-col gap-8 text-center">
+    <div class="modal-header px-4 md:px-6">
+      <button type="button" class="modal-close absolute right-4 top-4 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body px-4 md:px-6 flex flex-col items-center">
+      <div class="w-16 h-16 mb-2 bg-green-100 rounded-full flex items-center justify-center">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2">
+          <path d="M3 8L10.89 13.26C11.2187 13.4793 11.6049 13.5963 12 13.5963C12.3951 13.5963 12.7813 13.4793 13.11 13.26L21 8M5 19H19C20.1046 19 21 18.1046 21 17V7C21 5.89543 20.1046 5 19 5H5C3.89543 5 3 5.89543 3 7V17C3 18.1046 3.89543 19 5 19Z" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h3 class="h2">Check your email</h3>
+      <p class="text-gray-700">We've sent a password reset link to<br><span id="sent-email" class="font-bold text-gray-900"></span></p>
+    </div>
+    <div class="modal-footer px-4 md:px-6 pb-4 flex flex-col gap-2">
+      <button type="button" class="btn-default black lg justify-center w-full flex modal-close">
+        Got it
+      </button>
+      <button type="button" class="text-gray-700 hover:text-orange-500 py-2 font-bold" id="resend-email">
+        Didn't receive? Resend
+      </button>
+    </div>
+  </div>
+</div>

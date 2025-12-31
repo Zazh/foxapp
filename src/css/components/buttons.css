@@ -1,0 +1,85 @@
+@layer components {
+    .btn-menu {
+        @apply lg:ml-auto w-12 h-6 lg:w-16 lg:h-8 lg:my-4 relative cursor-pointer z-100;
+    }
+    .btn-menu > .line-item {
+        @apply w-full h-[2px] bg-black absolute transition-all duration-300;
+    }
+    .btn-menu:hover > .line-item {
+        @apply bg-orange-500;
+    }
+
+    .btn-link {
+        @apply text-sm py-2 font-medium hover:text-orange-500 cursor-pointer;
+    }
+    .btn-link.active {
+        @apply text-orange-500;
+    }
+
+    .btn-default, .btn-tabs {
+        @apply border-0 leading-tight text-sm py-3 px-5 rounded-4xl cursor-pointer font-bold;
+    }
+    .btn-default.lg {
+        @apply text-base py-4 px-6;
+    }
+    .btn-default.sm {
+        @apply text-sm py-3 px-5;
+    }
+    .btn-default.outline {
+        @apply border-orange-500 text-orange-500 border-1 hover:bg-orange-500 hover:text-white transition-all;
+    }
+    .btn-default.primary {
+        @apply text-white border-1 hover:bg-black bg-orange-500 transition-all;
+    }
+    .btn-default.black {
+        @apply text-white border-1 hover:bg-orange-500 bg-black transition-all;
+    }
+    .btn-default.telegram {
+        @apply bg-[#29A9EA] text-white hover:bg-[#1E96D3];
+    }
+    .btn-default.danger {
+        @apply bg-red-500 text-white hover:bg-red-600;
+    }
+
+    .btn-tabs {
+        @apply border-1 leading-tight text-sm py-2.5 px-4.5 rounded-4xl cursor-pointer font-bold hover:bg-orange-500 hover:border-orange-500 hover:text-white transition-all;
+    }
+    .btn-tabs.active {
+        @apply border-orange-500 text-orange-500 border-1 hover:bg-orange-500 hover:text-white transition-all;
+    }
+
+    .list-label {
+        @apply text-xs font-bold text-black leading-tight bg-black/5 px-2 py-2 rounded-sm;
+    }
+    .list-label.success {
+        @apply text-green-500 bg-green-500/10;
+    }
+    .list-label.danger {
+        @apply text-red-500 bg-red-500/10;
+    }
+    .list-label.primary {
+        @apply text-orange-500 bg-orange-500/10;
+    }
+    .list-label.blue {
+        @apply text-blue-500 bg-blue-500/10;
+    }
+
+    .btn-card {
+        @apply rounded-lg text-sm font-bold leading-tight py-2.5 px-3 border-1 cursor-pointer whitespace-nowrap;
+    }
+    .btn-card.outline-secondary {
+        @apply border-gray-100 hover:bg-orange-500 hover:border-orange-500 hover:text-white transition-all;
+    }
+    .btn-card.default {
+        @apply bg-black text-white hover:bg-orange-500 transition-all;
+    }
+    .btn-card.danger {
+        @apply bg-red-600 text-white hover:bg-orange-500 transition-all;
+    }
+
+    .btn-back {
+        @apply w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center cursor-pointer
+        hover:bg-orange-500 transition-colors hover:text-white;
+    }
+
+}

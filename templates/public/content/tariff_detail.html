@@ -1,0 +1,236 @@
+{% extends 'public/base.html' %}
+{% load i18n %}
+{% load static %}
+
+{% block title %}{{ tariff.name }} — {{ service.name }}{% endblock %}
+{% block header_class %}default{% endblock %}
+
+{% block stylesheets %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+{% endblock %}
+
+{% block content %}
+
+<!-- breadcrumb -->
+<section class="grid md:grid-cols-12 grid-full gap-4 pt-[8rem] px-4">
+    <div class="lg:col-start-4 xl:col-start-5 col-span-full">
+        <ul class="flex gap-3 text-gray-700 font-bold text-sm">
+            <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
+            <li> / </li>
+            <li><a href="{% url 'service_detail' service.service_type %}">{{ service.name }}</a></li>
+            <li> / </li>
+            <li class="text-orange-500">{{ tariff.name }}</li>
+        </ul>
+    </div>
+</section>
+<!-- breadcrumb -->
+
+<section class="grid md:grid-cols-12 grid-full gap-x-4 px-4 border-b border-gray-100 pt-8 lg:pt-4">
+    <div class="lg:col-span-3 xl:col-span-4 col-span-full flex">
+        <div class="mt-auto flex-1">
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">{% trans 'Tariff Details' %}</p>
+        </div>
+    </div>
+    <div class="lg:col-span-8 col-span-full">
+        <h1 class="h1 leading-tight">{{ tariff.name }}</h1>
+    </div>
+</section>
+
+<section class="grid md:grid-cols-12 grid-full gap-4 px-4 pt-8 pb-20">
+    <form method="post" action="{% url 'booking_create' service.service_type tariff.slug %}" class="lg:col-start-4 xl:col-start-5 xl:col-span-4 lg:col-span-6 col-span-full flex flex-col gap-8">
+        {% csrf_token %}
+        <div class="flex flex-col gap-4">
+            <!-- tabs nav -->
+            <ul class="flex gap-2 text-gray-700 font-bold text-sm">
+                <li><button type="button" class="btn-tabs active" data-tab="descriptions">{% trans 'Descriptions' %}</button></li>
+                <li><button type="button" class="btn-tabs" data-tab="gallery">{% trans 'Gallery' %}</button></li>
+                <li><button type="button" class="btn-tabs" data-tab="location">{% trans 'Location' %}</button></li>
+            </ul>
+            <!-- tabs nav -->
+
+            <!-- tabs Descriptions -->
+            <div id="descriptions" class="tab-content" data-tab-content="descriptions">
+                <p class="leading-tight font-medium pb-4">
+                    {{ tariff.description|safe }}
+                </p>
+
+
+                <ul class="flex gap-1.5 py-2">
+                    {% for benefit in tariff.benefits.all %}
+                    <li><span class="list-label">{{ benefit.text }}</span></li>
+                    {% endfor %}
+
+                    {% if tariff.availability_status == 'fully_booked' %}
+                        <li><span class="list-label danger">{% trans "Fully booked" %}</span></li>
+                    {% elif tariff.availability_status == 'few_left' %}
+                        <li><span class="list-label primary">{% trans "Few units left" %}</span></li>
+                    {% else %}
+                        <li><span class="list-label success">{% trans "Available now" %}</span></li>
+                    {% endif %}
+
+                </ul>
+            </div>
+            <!-- tabs Descriptions -->
+
+            <!-- tabs Gallery -->
+            <div id="gallery" class="gallery-section tab-content hidden" data-tab-content="gallery">
+                <div class="gallery-slider rounded-none w-full">
+                    <div class="relative">
+                        <!-- Slides Container -->
+                        <div class="gallery-slides rounded-sm aspect-[16/9] overflow-hidden">
+                            {% for image in tariff.images.all %}
+                            <figure class="gallery-slide">
+                                <img src="{{ image.image.url }}" alt="{{ image.alt_text }}" class="w-full h-full object-cover">
+                            </figure>
+                            {% endfor %}
+                        </div>
+
+                        <!-- Controls -->
+                        <button type="button" class="gallery-control prev" aria-label="{% trans 'Previous slide' %}">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                            </svg>
+                        </button>
+                        <button type="button" class="gallery-control next" aria-label="{% trans 'Next slide' %}">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                            </svg>
+                        </button>
+
+                        <!-- Dots -->
+                        <div class="gallery-dots"></div>
+                    </div>
+
+                    <!-- Titles -->
+                    <div class="gallery-titles mt-4">
+                        {% for image in tariff.images.all %}
+                        <p class="gallery-title text-sm">{{ image.alt_text }}</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <!-- tabs Gallery -->
+
+            <!-- tabs Location -->
+            <div id="location" class="tab-content location-section hidden" data-tab-content="location">
+                <div class="aspect-[16/9] overflow-hidden w-full rounded-sm bg-gray-200 relative border-1 border-gray-100">
+                    <div id="map" class="w-full absolute top-0 left-0 right-0 -bottom-4 z-0" data-coordinates="{{ tariff.location.coordinates }}"></div>
+                </div>
+
+                <div class="base-card">
+                    <div class="pt-2">
+                        <p class="text-gray-600 leading-tight font-medium text-sm" id="address-text">
+                            {{ tariff.location.street }} /<span class="md:block text-orange-500">{{ tariff.location.building }}</span>
+                        </p>
+                    </div>
+
+                    <div class="location-card-footer flex gap-4 justify-between items-center border-t-1 pt-2 mt-3 border-gray-100">
+                        <span class="flex items-center gap-2 text-sm text-gray-600 font-medium">
+                            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                            {{ tariff.location.working_hours }}
+                        </span>
+                        <div class="flex gap-2">
+                            <button type="button" class="btn-card outline-secondary" data-copy-target="address-text" data-copy-success="{% trans 'Copied!' %}">{% trans "Copy address" %}</button>
+                            <a href="{{ tariff.location.google_maps_url }}" target="_blank" class="btn-card default">{% trans "Get directions" %}</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- tabs Location -->
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <div>
+                <h2 class="h4 text-gray-700 font-medium">{% translate 'Select durations' %}</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {% for period in periods %}
+                <label class="pricing-card">
+                    <input type="radio" name="period" value="{{ period.id }}" class="sr-only peer"
+                        data-price="{{ period.price_aed }}"
+                        {% if period.has_discount %}
+                            data-discount="{{ period.discount_percent }}"
+                            data-original="{{ period.original_price_aed }}"
+                        {% endif %}
+                        {% if period.is_recommended %}checked{% endif %} >
+
+                    <span class="pricing-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                        <span class="pricing-card-check">
+                            <svg class="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                            </svg>
+                        </span>
+                        <span class="pricing-card-content">
+                            <span class="text-base font-bold text-black">{{ period.name }}</span>
+                            <span class="text-gray-600 text-sm mt-1">{{ period.description }}</span>
+                        </span>
+                        <span class="pricing-card-price">
+                            <span class="text-sm font-bold text-black">AED {{ period.price_aed|floatformat:0 }}</span>
+                            {% if period.has_discount %}
+                                <span class="text-sm font-bold text-orange-500">/ {{ period.discount_percent }}% off</span>
+                            {% endif %}
+                        </span>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-4">
+            <div>
+                <h2 class="h4 text-gray-700 font-medium">{% translate 'Additional services' %}</h2>
+            </div>
+            <div class="flex flex-col gap-3">
+                {% for addon in addons %}
+                <label class="addon-card">
+                    <input type="checkbox" name="addons" value="{{ addon.id }}" class="sr-only peer"
+                        data-price="{{ addon.price_aed }}"
+                        {% if addon.is_free %}data-free="true"{% endif %}
+                    >
+                    <span class="addon-card-inner peer-checked:border-green-500 peer-checked:border-1">
+                        <span class="addon-card-checkbox">
+                            <svg class="w-4 h-4 opacity-0 peer-checked:opacity-100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                            </svg>
+                        </span>
+                        <span class="addon-card-content">
+                            <span class="text-base font-bold text-black">{{ addon.name }}</span>
+                            <span class="text-gray-600 text-sm">{{ addon.description }}</span>
+                        </span>
+                        <span class="addon-card-price">
+                            <span class="text-base font-bold text-gray-800">
+                                {% if addon.is_free %}
+                                    {% trans "Free" %}
+                                {% else %}
+                                    + {{ addon.price_aed|floatformat:0 }} AED
+                                {% endif %}
+                            </span>
+                        </span>
+                    </span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Итого -->
+        <div class="flex justify-between gap-4 flex-wrap py-4 border-t-1 border-gray-200">
+            <ul class="flex flex-col gap-1 font-medium">
+                <li class="uppercase tracking-wider text-gray-600 text-xs">{% translate 'Total' %}</li>
+                <li class="uppercase text-2xl text-black font-bold">
+                    <span id="total-price">0</span>
+                    <s class="text-base text-gray-600 hidden" id="original-price">/ 0</s>
+                </li>
+            </ul>
+            <button type="submit" class="btn-default primary lg justify-center" id="btn-continue">
+                {% translate 'Continue' %}
+            </button>
+        </div>
+
+    </form>
+</section>
+
+{% endblock %}

@@ -1,0 +1,93 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Visits{% endblock %}
+
+{% block content %}
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Visits</h1>
+    <p class="text-gray-600">Access history</p>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow mb-6 p-4">
+    <form method="get" class="flex gap-4 items-end">
+        <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <input type="text" name="search" value="{{ search }}" placeholder="Email, name, unit..." 
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+        </div>
+        <div class="w-40">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Type</label>
+            <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">All types</option>
+                <option value="owner" {% if current_type == 'owner' %}selected{% endif %}>Owner</option>
+                <option value="guest" {% if current_type == 'guest' %}selected{% endif %}>Guest</option>
+            </select>
+        </div>
+        <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">Filter</button>
+        {% if search or current_type %}
+        <a href="{% url 'backoffice:visit_list' %}" class="px-4 py-2 text-gray-600 hover:text-gray-900">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Time</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visitor</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Owner</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Scanned by</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for visit in visits %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4">
+                    <div class="text-sm font-medium">{{ visit.visited_at|date:"d M Y" }}</div>
+                    <div class="text-sm text-gray-500">{{ visit.visited_at|time:"H:i" }}</div>
+                </td>
+                <td class="px-6 py-4 font-medium">{{ visit.visitor_name }}</td>
+                <td class="px-6 py-4">
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full 
+                        {% if visit.visitor_type == 'owner' %}bg-blue-100 text-blue-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+                        {{ visit.visitor_type }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 font-mono text-sm">{{ visit.booking.storage_unit.full_code|default:"-" }}</td>
+                <td class="px-6 py-4">
+                    <a href="{% url 'backoffice:user_detail' visit.booking.user.pk %}" class="hover:underline">
+                        <div class="text-sm">{{ visit.booking.user.get_full_name }}</div>
+                        <div class="text-xs text-gray-500">{{ visit.booking.user.email }}</div>
+                    </a>
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">{{ visit.scanned_by.get_full_name|default:visit.scanned_by.email }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="px-6 py-8 text-center text-gray-500">No visits found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="mt-6 flex justify-center gap-2">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}" 
+       class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
+    {% endif %}
+    <span class="px-4 py-2 text-gray-600">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_type %}&type={{ current_type }}{% endif %}" 
+       class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+{% endblock %}

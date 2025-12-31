@@ -1,0 +1,70 @@
+{% extends 'public/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Test Payment" %}{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center px-4 py-20 bg-gray-50 -mb-8">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div class="text-center mb-6">
+            <div class="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                </svg>
+            </div>
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Test Mode" %}</h1>
+            <p class="text-gray-600">{% trans "Stripe is not configured. This is a mock payment page." %}</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-4 mb-6">
+            <h2 class="font-semibold text-gray-900 mb-3">{% trans "Booking Details" %}</h2>
+            <ul class="text-sm text-gray-600 space-y-2">
+                <li class="flex justify-between">
+                    <span>{% trans "Tariff" %}:</span>
+                    <span class="font-medium text-gray-900">{{ booking.tariff.name }}</span>
+                </li>
+                <li class="flex justify-between">
+                    <span>{% trans "Period" %}:</span>
+                    <span class="font-medium text-gray-900">{{ booking.period.name }}</span>
+                </li>
+                <li class="flex justify-between">
+                    <span>{% trans "Start date" %}:</span>
+                    <span class="font-medium text-gray-900">{{ booking.start_date }}</span>
+                </li>
+                <li class="flex justify-between">
+                    <span>{% trans "End date" %}:</span>
+                    <span class="font-medium text-gray-900">{{ booking.end_date }}</span>
+                </li>
+                <li class="flex justify-between pt-2 border-t mt-2">
+                    <span>{% trans "Period price" %}:</span>
+                    <span class="font-medium">{{ booking.price_aed }} AED</span>
+                </li>
+                {% if booking.addons_aed > 0 %}
+                <li class="flex justify-between">
+                    <span>{% trans "Addons" %}:</span>
+                    <span class="font-medium">{{ booking.addons_aed }} AED</span>
+                </li>
+                {% endif %}
+                <li class="flex justify-between">
+                    <span>{% trans "Deposit" %}:</span>
+                    <span class="font-medium">{{ booking.deposit_aed }} AED</span>
+                </li>
+                <li class="flex justify-between pt-2 border-t mt-2">
+                    <span class="font-semibold text-gray-900">{% trans "Total" %}:</span>
+                    <span class="text-lg font-bold text-green-600">{{ booking.total_aed }} AED</span>
+                </li>
+            </ul>
+        </div>
+        
+        <form method="post" class="space-y-3">
+            {% csrf_token %}
+            <button type="submit" name="action" value="pay" class="w-full bg-green-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-green-700 transition">
+                {% trans "Simulate Successful Payment" %}
+            </button>
+            <button type="submit" name="action" value="cancel" class="w-full bg-gray-200 text-gray-700 py-3 px-4 rounded-lg font-semibold hover:bg-gray-300 transition">
+                {% trans "Cancel" %}
+            </button>
+        </form>
+    </div>
+</section>
+{% endblock %}

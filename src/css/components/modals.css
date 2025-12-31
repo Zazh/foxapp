@@ -1,0 +1,36 @@
+@layer components {
+    /* Оверлей */
+    .modal-overlay {
+        @apply fixed inset-0 bg-black/50 z-150
+        opacity-0 invisible transition-all duration-300
+        flex items-start justify-center overflow-y-auto p-2 md:p-4;
+    }
+
+    .modal-overlay.active {
+        @apply opacity-100 visible;
+    }
+
+    /* Модальное окно */
+    .modal {
+        @apply bg-white rounded-lg w-full max-w-lg
+        mt-8 md:mt-16 mb-8 relative
+        scale-95 opacity-0 transition-all duration-300;
+    }
+
+    .modal-overlay.active .modal {
+        @apply scale-100 opacity-100;
+    }
+
+    /* Части модалки */
+    .modal-header {
+        @apply pt-6;
+    }
+
+    /*.modal-body {*/
+    /*    @apply px-4 md:px-6;*/
+    /*}*/
+
+    .modal-footer {
+        @apply py-4 border-t border-gray-100;
+    }
+}

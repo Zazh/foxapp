@@ -1,0 +1,143 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block title %}Tdetail{% endblock %}
+{% block header_class %}default{% endblock %}
+
+{% block content %}
+
+<!-- About hero -->
+<section class="grid md:grid-cols-12 gap-x-4 px-4 border-b border-gray-100 pt-[8rem] lg:pt-[8rem]">
+    <div class="lg:col-span-3 col-span-full flex">
+        <div class="mt-auto flex-1">
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">About</p>
+        </div>
+    </div>
+    <div class="lg:col-span-5 col-span-full">
+        <h1 class="h1 leading-tight">Foxbox</h1>
+    </div>
+</section>
+
+<section class="grid md:grid-cols-12 gap-4 px-4 pt-6 pb-8">
+    <div class="col-span-full lg:col-span-5 lg:col-start-4 xl:col-start-4 xl:col-span-5 flex flex-col gap-8">
+        <div class="flex flex-col gap-8">
+            <div class="flex-1">
+                <h2 class="h3 text-orange-500">
+                    Modern self-storage in Dubai — <span class="md:block">reserve your unit online in minutes</span>
+                </h2>
+            </div>
+
+            <div class="flex flex-wrap gap-4">
+                <div class="w-full">
+                    <h4 class="h4 font-bold">What we offer</h4>
+                </div>
+                <div class="w-full">
+                    <p class="text-gray-700 leading-tight">
+                        Foxbox helps you store your belongings in a secure, well-organized facility in Dubai. Choose the right unit size, pick a subscription term, and manage everything from your personal dashboard.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-span-full lg:col-start-4 lg:col-span-6 xl:col-start-4 xl:col-span-6
+                flex flex-col gap-8
+                py-4">
+        <figure class="flex flex-col gap-3">
+            <img src="{% static 'dist/images/place.jpg' %}" alt="foxbox" class="w-full">
+            <figcaption class="text-black text-right font-bold text-xs leading-tight">
+                A photo of a simple unit with 24-hour access
+            </figcaption>
+        </figure>
+    </div>
+</section>
+<!-- About hero -->
+
+
+<!-- For whom -->
+<section class="grid md:grid-cols-12 gap-x-4 px-4 pt-6 pb-4 border-b border-gray-100">
+    <div class="lg:col-span-3 col-span-full flex">
+        <div class="mt-auto flex-1">
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">For whom</p>
+        </div>
+    </div>
+    <div class="lg:col-span-5 col-span-full">
+        <h1 class="h2 leading-tight">Designed for real life</h1>
+    </div>
+</section>
+
+<section class="grid md:grid-cols-12 gap-4 px-4 pt-6 pb-8">
+    <div class="col-span-full lg:col-span-5 lg:col-start-4 xl:col-start-4 xl:col-span-5 flex flex-col gap-8">
+        <div class="flex flex-col gap-8">
+            <div class="flex-1">
+                <h2 class="lead text-gray-700">
+                    Whether you’re relocating, renovating, traveling, or freeing up space at home or in the office, our units are built for everyday storage: boxes, luggage, seasonal items, business inventory, and equipment.
+                </h2>
+            </div>
+
+            <!-- Info 1 -->
+            <div class="flex flex-wrap gap-4">
+                <div class="w-full">
+                    <h4 class="lead font-bold">Security & comfort</h4>
+                </div>
+                <div class="w-full">
+                    <p class="text-gray-700 leading-tight">
+                        We focus on a clean, secure, and predictable experience: controlled access, monitored areas, and clear on-site rules. Your dashboard shows unit details, billing status, and key access information in one place.                    </p>
+                </div>
+            </div>
+            <!-- Info 1 -->
+
+            <!-- Info 2 -->
+            <div class="flex flex-wrap gap-4">
+                <div class="w-full">
+                    <h4 class="lead font-bold">Clear sizing</h4>
+                </div>
+                <div class="w-full">
+                    <p class="text-gray-700 leading-tight">
+                        Each plan shows a typical unit size. Actual dimensions may vary slightly due to the facility layout, and floor area may differ by up to 5%.                    </p>
+                </div>
+            </div>
+            <!-- Info 2 -->
+        </div>
+    </div>
+
+</section>
+<!-- For whom -->
+
+<!-- Feedback -->
+<section class="grid md:grid-cols-12 gap-x-4 px-4 pt-6 pb-4 border-b border-gray-100">
+    <div class="lg:col-span-3 col-span-full flex">
+        <div class="mt-auto flex-1">
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">feedback</p>
+        </div>
+    </div>
+    <div class="lg:col-span-5 col-span-full">
+        <h1 class="h2 leading-tight">Leave a request</h1>
+    </div>
+</section>
+
+<section class="grid md:grid-cols-12 gap-4 px-4 pt-6 pb-8">
+    <div class="col-span-full lg:col-span-5 lg:col-start-4 xl:col-start-4 xl:col-span-5 flex flex-col gap-8">
+        <div class="flex flex-col gap-6">
+            <div class="flex-1">
+                <h2 class="text-lg text-black font-bold leading-tight">
+                    Not sure which plan to choose? Submit a request
+                    <span class="md:block">and our manager will help you choose.</span>
+                </h2>
+            </div>
+
+            <!-- Info 1 -->
+            <div class="flex flex-wrap gap-4">
+                <div class="w-full">
+                    <button class="btn-default primary lg justify-center [ modal-open ]" data-modal="modal-feedback">
+                        Submit a request
+                    </button>
+                </div>
+            </div>
+            <!-- Info 1 -->
+        </div>
+    </div>
+
+</section>
+<!-- Feedback -->
+{% endblock %}

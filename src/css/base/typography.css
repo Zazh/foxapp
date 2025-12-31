@@ -1,0 +1,21 @@
+.h1 {
+    @apply text-4xl md:text-[3.5rem] font-medium;
+}
+.h2 {
+    @apply text-[2rem] font-medium;
+}
+.h3 {
+    @apply text-xl md:text-2xl font-bold;
+}
+.h4 {
+    @apply text-xl;
+}
+.h5 {
+    @apply font-bold text-base;
+}
+.small {
+    @apply text-sm font-bold;
+}
+.lead {
+    @apply text-base md:text-lg font-medium leading-tight;
+}

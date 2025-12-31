@@ -1,0 +1,28 @@
+{
+  "name": "foxapp",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev:css": "tailwindcss -i src/css/main.css -o static/dist/css/styles.css --watch",
+    "dev:js": "esbuild src/js/*.js --bundle --outdir=static/dist/js --watch",
+    "copy:fonts": "npx cpy \"src/fonts/**\" static/dist/fonts",
+    "copy:images": "npx cpy \"src/images/**\" static/dist/images",
+    "copy:assets": "pnpm run copy:fonts && pnpm run copy:images",
+    "build:css": "cross-env NODE_ENV=production tailwindcss -i src/css/main.css -o static/dist/css/styles.css --minify",
+    "build:js": "esbuild src/js/*.js --bundle --minify --outdir=static/dist/js",
+    "build": "pnpm run copy:assets && pnpm run build:css && pnpm run build:js",
+    "dev": "pnpm run copy:assets && concurrently -k -n \"css,js\" -c \"magenta,cyan\" \"pnpm run dev:css\" \"pnpm run dev:js\""
+  },
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.1.15",
+    "concurrently": "^9.1.0",
+    "cpy-cli": "^5.0.0",
+    "cross-env": "^7.0.3",
+    "esbuild": "^0.24.0",
+    "tailwindcss": "^4.1.0"
+  },
+  "dependencies": {
+    "intl-tel-input": "^25.14.0",
+    "qrcode": "^1.5.4"
+  }
+}

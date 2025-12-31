@@ -1,0 +1,54 @@
+{% extends 'public/base.html' %}
+{% load i18n %}
+
+{% block title %}{% trans "Booking Confirmed" %}{% endblock %}
+
+{% block content %}
+<section class="min-h-screen flex items-center justify-center px-4 py-20 bg-gray-50 -mb-8">
+    <div class="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+        <div class="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
+            <svg class="w-10 h-10 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+            </svg>
+        </div>
+        
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">{% trans "Booking Confirmed!" %}</h1>
+        <p class="text-gray-600 mb-6">{% trans "Your payment was successful. Here are your booking details." %}</p>
+        
+        <div class="bg-gray-50 rounded-lg p-4 mb-6 text-left">
+            <ul class="text-sm text-gray-600 space-y-2">
+                <li class="flex justify-between">
+                    <span>{% trans "Booking ID" %}:</span>
+                    <span class="font-medium text-gray-900">#{{ booking.pk }}</span>
+                </li>
+                <li class="flex justify-between">
+                    <span>{% trans "Tariff" %}:</span>
+                    <span class="font-medium text-gray-900">{{ booking.tariff.name }}</span>
+                </li>
+                <li class="flex justify-between">
+                    <span>{% trans "Location" %}:</span>
+                    <span class="font-medium text-gray-900">{{ booking.tariff.location.name }}</span>
+                </li>
+                {% if booking.storage_unit %}
+                <li class="flex justify-between">
+                    <span>{% trans "Unit" %}:</span>
+                    <span class="font-medium text-gray-900">{{ booking.storage_unit.full_code }}</span>
+                </li>
+                {% endif %}
+                <li class="flex justify-between">
+                    <span>{% trans "Period" %}:</span>
+                    <span class="font-medium text-gray-900">{{ booking.start_date }} — {{ booking.end_date }}</span>
+                </li>
+                <li class="flex justify-between pt-2 border-t mt-2">
+                    <span>{% trans "Total paid" %}:</span>
+                    <span class="font-bold text-green-600">{{ booking.total_aed }} AED</span>
+                </li>
+            </ul>
+        </div>
+        
+        <a href="{% url 'cabinet-dashboard' %}" class="block w-full bg-orange-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-orange-600 transition">
+            {% trans "Go to Dashboard" %}
+        </a>
+    </div>
+</section>
+{% endblock %}

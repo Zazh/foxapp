@@ -1,0 +1,227 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-12-30 01:06+0400\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 "
+"&& n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5;\n"
+#: accounts/admin.py:17
+msgid "Personal info"
+msgstr ""
+
+#: accounts/admin.py:18
+msgid "Auth provider"
+msgstr ""
+
+#: accounts/admin.py:19
+msgid "Telegram"
+msgstr ""
+
+#: accounts/admin.py:20
+msgid "Permissions"
+msgstr ""
+
+#: accounts/admin.py:23
+msgid "Important dates"
+msgstr ""
+
+#: accounts/forms.py:12
+msgid "Full Name"
+msgstr ""
+
+#: accounts/forms.py:20
+msgid "Last Name"
+msgstr ""
+
+#: accounts/forms.py:28
+msgid "ID Card"
+msgstr ""
+
+#: accounts/forms.py:35
+msgid "Phone"
+msgstr ""
+
+#: accounts/forms.py:43 accounts/forms.py:106 accounts/forms.py:151
+msgid "Email"
+msgstr ""
+
+#: accounts/forms.py:50 accounts/forms.py:113
+msgid "Password"
+msgstr ""
+
+#: accounts/forms.py:57
+msgid "Confirm password"
+msgstr ""
+
+#: accounts/forms.py:67
+msgid "A user with this email already exists."
+msgstr ""
+
+#: accounts/forms.py:73
+msgid "A user with this ID card already exists."
+msgstr ""
+
+#: accounts/forms.py:87 accounts/forms.py:198
+msgid "Passwords do not match."
+msgstr ""
+
+#: accounts/forms.py:120
+msgid "Remember me"
+msgstr ""
+
+#: accounts/forms.py:138
+msgid "Invalid email or password."
+msgstr ""
+
+#: accounts/forms.py:140
+msgid "This account is inactive."
+msgstr ""
+
+#: accounts/forms.py:173
+msgid "New password"
+msgstr ""
+
+#: accounts/forms.py:180
+msgid "Confirm new password"
+msgstr ""
+
+#: accounts/managers.py:10
+msgid "The Email must be set"
+msgstr ""
+
+#: accounts/managers.py:25
+msgid "Superuser must have is_staff=True."
+msgstr ""
+
+#: accounts/managers.py:27
+msgid "Superuser must have is_superuser=True."
+msgstr ""
+
+#: accounts/models.py:13
+msgid "email address"
+msgstr ""
+
+#: accounts/models.py:16
+msgid "A user with that email already exists."
+msgstr ""
+
+#: accounts/models.py:19
+msgid "first name"
+msgstr ""
+
+#: accounts/models.py:20
+msgid "last name"
+msgstr ""
+
+#: accounts/models.py:21
+msgid "phone number"
+msgstr ""
+
+#: accounts/models.py:23
+msgid "ID card"
+msgstr ""
+
+#: accounts/models.py:27
+msgid "A user with that ID card already exists."
+msgstr ""
+
+#: accounts/models.py:33
+msgid "auth provider"
+msgstr ""
+
+#: accounts/models.py:42
+msgid "provider ID"
+msgstr ""
+
+#: accounts/models.py:45
+msgid "Telegram ID"
+msgstr ""
+
+#: accounts/models.py:46
+msgid "Telegram username"
+msgstr ""
+
+#: accounts/models.py:50
+msgid "staff status"
+msgstr ""
+
+#: accounts/models.py:52
+msgid "Designates whether the user can log into this admin site."
+msgstr ""
+
+#: accounts/models.py:55
+msgid "active"
+msgstr ""
+
+#: accounts/models.py:57
+msgid "Designates whether this user should be treated as active."
+msgstr ""
+
+#: accounts/models.py:60
+msgid "verified"
+msgstr ""
+
+#: accounts/models.py:62
+msgid "Designates whether this user has verified their email."
+msgstr ""
+
+#: accounts/models.py:66
+msgid "date joined"
+msgstr ""
+
+#: accounts/models.py:67
+msgid "last login"
+msgstr ""
+
+#: accounts/models.py:71
+msgid "preferred language"
+msgstr ""
+
+#: accounts/models.py:87
+msgid "user"
+msgstr ""
+
+#: accounts/models.py:88
+msgid "users"
+msgstr ""
+
+#: accounts/views.py:56
+msgid "Email verified successfully! Welcome to FoxBox."
+msgstr ""
+
+#: accounts/views.py:98
+msgid "You have been logged out."
+msgstr ""
+
+#: accounts/views.py:146
+msgid "Password reset successfully! You can now sign in."
+msgstr ""
+
+#: core/settings.py:104
+msgid "English"
+msgstr ""
+
+#: core/settings.py:105
+msgid "Russian"
+msgstr ""
+
+#: core/settings.py:106
+msgid "Arabic"
+msgstr ""
+
+#: templates/auth/login.html:11
+msgid "Account"
+msgstr ""
