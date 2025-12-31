@@ -59,7 +59,7 @@
                 </p>
 
 
-                <ul class="flex gap-1.5 py-2">
+                <ul class="flex gap-1.5 py-2 flex-wrap">
                     {% for benefit in tariff.benefits.all %}
                     <li><span class="list-label">{{ benefit.text }}</span></li>
                     {% endfor %}
@@ -128,7 +128,7 @@
                         </p>
                     </div>
 
-                    <div class="location-card-footer flex gap-4 justify-between items-center border-t-1 pt-2 mt-3 border-gray-100">
+                    <div class="location-card-footer flex flex-col md:flex-row gap-4 justify-between md:items-center border-t-1 pt-2 mt-3 border-gray-100">
                         <span class="flex items-center gap-2 text-sm text-gray-600 font-medium">
                             <span class="w-2 h-2 bg-green-500 rounded-full"></span>
                             {{ tariff.location.working_hours }}
