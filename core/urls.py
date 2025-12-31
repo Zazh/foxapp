@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.conf import settings
 from django.conf.urls.static import static
 
+from accounts.views import telegram_webhook
 
 
 # Защищённый TemplateView
@@ -16,6 +17,8 @@ class ProtectedTemplateView(LoginRequiredMixin, TemplateView):
 # URL без языкового префикса
 urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
+    path('webhooks/telegram/', telegram_webhook, name='telegram_webhook_global'),
+
 ]
 
 # URL с языковым префиксом
