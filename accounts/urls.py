@@ -6,6 +6,7 @@ from .views import (
     forgot_password_view, forgot_password_done_view, reset_password_view,
     telegram_generate_link, telegram_webhook, telegram_disconnect
 )
+from .google_auth import google_login, google_callback
 
 urlpatterns = [
     path('register/', register_view, name='register'),
@@ -17,9 +18,12 @@ urlpatterns = [
     path('forgot-password/done/', forgot_password_done_view, name='forgot_password_done'),
     path('reset-password/<uidb64>/<token>/', reset_password_view, name='reset_password'),
 
+    # Google OAuth
+    path('google/login/', google_login, name='google_login'),
+    path('google/callback/', google_callback, name='google_callback'),
+
     # Telegram
     path('telegram/generate-link/', telegram_generate_link, name='telegram_generate_link'),
     path('telegram/webhook/', telegram_webhook, name='telegram_webhook'),
     path('telegram/disconnect/', telegram_disconnect, name='telegram_disconnect'),
-
 ]

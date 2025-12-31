@@ -19,15 +19,18 @@ class User(AbstractBaseUser, PermissionsMixin):
     first_name = models.CharField(_('first name'), max_length=150)
     middle_name = models.CharField(_('middle name'), max_length=150, blank=True)
     last_name = models.CharField(_('last name'), max_length=150)
-    phone = models.CharField(_('phone number'), max_length=20)
     id_card = models.CharField(
         _('ID card'),
         max_length=50,
-        unique=True,
+        blank=True,  # Разрешить пустое
+        null=True,  # Разрешить NULL в БД
+        unique=True,  # Оставляем unique
         error_messages={
             'unique': _('A user with that ID card already exists.'),
         },
     )
+
+    phone = models.CharField(_('phone number'), max_length=20, blank=True)
 
     # SSO поля
     auth_provider = models.CharField(

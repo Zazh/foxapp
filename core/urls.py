@@ -24,6 +24,7 @@ urlpatterns += i18n_patterns(
 
     # Auth (accounts app)
     path('', include('accounts.urls')),
+    path('auth/', include('accounts.urls')),
 
     # Services (services app)
     path('services/', include('services.urls')),
