@@ -17,14 +17,6 @@
       </div>
       <div class="w-full">
         <ul class="flex items-center justify-center gap-8">
-          <li class="btn-link active"><a href="{% url 'home' %}">{% trans 'Home' %}</a></li>
-          <li class="btn-link"><a href="{% url 'about' %}">{% trans 'About' %}</a></li>
-          <li class="btn-link"><a href="{% url 'tariff_detail' 'auto' 'standard' %}">{% trans 'Parking' %}</a></li>
-          <li class="btn-link"><a href="{% url 'contacts' %}">{% trans 'Contacts' %}</a></li>
-        </ul>
-      </div>
-      <div class="w-full">
-        <ul class="flex items-center justify-center gap-8">
           <li class="btn-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
             <a href="{% url 'home' %}">{% trans 'Home' %}</a>
           </li>
