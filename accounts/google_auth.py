@@ -133,7 +133,7 @@ def google_callback(request):
             first_name=first_name or 'User',
             last_name=last_name or '',
             phone='',  # Пустой, заполнит позже
-            id_card='',  # Пустой, заполнит позже
+            id_card=None,
             auth_provider='google',
             provider_id=google_id,
             is_verified=True,
