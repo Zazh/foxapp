@@ -1,4 +1,601 @@
-(()=>{function b(t){let e=null;if(document.cookie&&document.cookie!==""){let o=document.cookie.split(";");for(let n=0;n<o.length;n++){let d=o[n].trim();if(d.substring(0,t.length+1)===t+"="){e=decodeURIComponent(d.substring(t.length+1));break}}}return e}document.addEventListener("DOMContentLoaded",()=>{let t=document.getElementById("menu"),e=document.getElementById("menu-overlay"),o=document.getElementById("menu-toggle"),n=document.getElementById("menu-close"),d=()=>{t.classList.remove("-translate-x-full"),e.classList.remove("hidden"),document.body.classList.add("overflow-hidden")},a=()=>{t.classList.add("-translate-x-full"),e.classList.add("hidden"),document.body.classList.remove("overflow-hidden")};o?.addEventListener("click",d),n?.addEventListener("click",a),e?.addEventListener("click",a)});document.addEventListener("DOMContentLoaded",()=>{let t=document.getElementById("lang-toggle"),e=document.getElementById("lang-dropdown"),o=document.getElementById("lang-arrow"),n=document.getElementById("language-form"),d=document.getElementById("language-input"),a=document.getElementById("language-next"),s=document.querySelectorAll(".lang-option");if(!t||!e)return;let c=()=>window.location.pathname.replace(/^\/(ru|ar|en)(\/|$)/,"/")||"/";a&&(a.value=c()),t.addEventListener("click",i=>{i.stopPropagation(),e.classList.toggle("hidden"),o?.classList.toggle("rotate-180")}),s.forEach(i=>{i.addEventListener("click",()=>{let l=i.dataset.lang;n&&d&&(d.value=l,a&&(a.value=c()),n.submit())})}),document.addEventListener("click",i=>{!e.contains(i.target)&&!t.contains(i.target)&&(e.classList.add("hidden"),o?.classList.remove("rotate-180"))}),document.addEventListener("keydown",i=>{i.key==="Escape"&&(e.classList.add("hidden"),o?.classList.remove("rotate-180"))})});document.addEventListener("DOMContentLoaded",()=>{let t=document.getElementById("hero-logo"),e=document.getElementById("hero");if(!t||!e)return;let o=()=>{let n=e.getBoundingClientRect(),d=e.offsetHeight,a=-n.top,c=.7+Math.min(Math.max(a/d*2,0),1)*.3;t.style.transform=`scale(${c})`};window.addEventListener("scroll",o),o()});document.addEventListener("DOMContentLoaded",()=>{let t=document.getElementById("benefits"),e=t?.querySelector(".btn-default.primary");!t||!e||(e.addEventListener("mouseenter",()=>{t.classList.add("active")}),e.addEventListener("mouseleave",()=>{t.classList.remove("active")}))});document.addEventListener("DOMContentLoaded",()=>{let t=document.querySelector(".gallery-slider");if(!t)return;let e=t.querySelectorAll(".gallery-slide"),o=t.querySelectorAll(".gallery-title"),n=t.querySelector(".gallery-dots"),d=t.querySelector(".gallery-control.prev"),a=t.querySelector(".gallery-control.next");if(!e.length)return;let s=0,c=e.length,i,l=()=>{if(e.forEach((r,u)=>{r.dataset.index=u,u===0&&r.classList.add("active")}),o.forEach((r,u)=>{r.dataset.index=u,u===0&&r.classList.add("active")}),n){n.innerHTML="";for(let r=0;r<c;r++){let u=document.createElement("button");u.className=`gallery-dot${r===0?" active":""}`,u.dataset.index=r,u.setAttribute("aria-label",`Go to slide ${r+1}`),u.addEventListener("click",()=>{g(r),f()}),n.appendChild(u)}}},g=r=>{r<0&&(r=c-1),r>=c&&(r=0),e.forEach(v=>v.classList.remove("active")),e[r].classList.add("active"),o.forEach(v=>v.classList.remove("active")),o[r]&&o[r].classList.add("active");let u=t.querySelectorAll(".gallery-dot");u.forEach(v=>v.classList.remove("active")),u[r]&&u[r].classList.add("active"),s=r},m=()=>g(s+1),y=()=>g(s-1);d?.addEventListener("click",()=>{y(),f()}),a?.addEventListener("click",()=>{m(),f()});let h=()=>{i=setInterval(m,5e3)},f=()=>{clearInterval(i),h()},E=0;t.addEventListener("touchstart",r=>{E=r.changedTouches[0].screenX},{passive:!0}),t.addEventListener("touchend",r=>{let u=E-r.changedTouches[0].screenX;Math.abs(u)>50&&(u>0?m():y(),f())},{passive:!0}),t.setAttribute("tabindex","0"),t.addEventListener("keydown",r=>{r.key==="ArrowLeft"?(y(),f()):r.key==="ArrowRight"&&(m(),f())}),l(),h()});document.addEventListener("DOMContentLoaded",()=>{let t=document.querySelectorAll('input[name="period"]'),e=document.querySelectorAll('input[name="addons"]'),o=document.getElementById("total-price"),n=document.getElementById("original-price");if(!o)return;let d=s=>`AED ${s.toLocaleString()}`,a=()=>{let s=0,c=0,i=!1,l=document.querySelector('input[name="period"]:checked');l&&(s+=parseInt(l.dataset.price)||0,c+=parseInt(l.dataset.original)||parseInt(l.dataset.price)||0,l.dataset.discount&&parseInt(l.dataset.discount)>0&&(i=!0)),e.forEach(g=>{if(g.checked){let m=parseInt(g.dataset.price)||0;s+=m,c+=m}}),o.textContent=d(s),i&&c>s?(n.textContent=`/ ${d(c)}`,n.classList.remove("hidden")):n.classList.add("hidden")};t.forEach(s=>{s.addEventListener("change",a)}),e.forEach(s=>{s.addEventListener("change",a)}),a()});document.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll("[data-copy-target]").forEach(e=>{e.addEventListener("click",()=>{let o=e.dataset.copyTarget,n=document.getElementById(o);if(!n)return;let d=n.textContent.trim(),a=e.dataset.copySuccess||"Copied!",s=e.textContent;navigator.clipboard.writeText(d).then(()=>{e.textContent=a,setTimeout(()=>{e.textContent=s},2e3)})})})});var p={};function I(){document.querySelectorAll("#map[data-coordinates]").forEach(e=>{let o=e.dataset.coordinates;if(!o||p[e.id])return;let[n,d]=o.split(",").map(c=>parseFloat(c.trim())),a=L.map(e,{zoomControl:!1}).setView([n,d],15);L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",{attribution:"\xA9 OpenStreetMap"}).addTo(a);let s=L.divIcon({html:`<svg width="40" height="48" viewBox="0 0 40 48" fill="#E26137" xmlns="http://www.w3.org/2000/svg">
+(() => {
+  // src/js/main.js
+  function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== "") {
+      const cookies = document.cookie.split(";");
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i].trim();
+        if (cookie.substring(0, name.length + 1) === name + "=") {
+          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+          break;
+        }
+      }
+    }
+    return cookieValue;
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    const menu = document.getElementById("menu");
+    const overlay = document.getElementById("menu-overlay");
+    const toggleBtn = document.getElementById("menu-toggle");
+    const closeBtn = document.getElementById("menu-close");
+    const openMenu = () => {
+      menu.classList.remove("-translate-x-full");
+      overlay.classList.remove("hidden");
+      document.body.classList.add("overflow-hidden");
+    };
+    const closeMenu = () => {
+      menu.classList.add("-translate-x-full");
+      overlay.classList.add("hidden");
+      document.body.classList.remove("overflow-hidden");
+    };
+    toggleBtn?.addEventListener("click", openMenu);
+    closeBtn?.addEventListener("click", closeMenu);
+    overlay?.addEventListener("click", closeMenu);
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const langToggle = document.getElementById("lang-toggle");
+    const langDropdown = document.getElementById("lang-dropdown");
+    const langArrow = document.getElementById("lang-arrow");
+    const langForm = document.getElementById("language-form");
+    const langInput = document.getElementById("language-input");
+    const langNext = document.getElementById("language-next");
+    const langOptions = document.querySelectorAll(".lang-option");
+    if (!langToggle || !langDropdown) return;
+    const getPathWithoutLang = () => {
+      const path = window.location.pathname;
+      return path.replace(/^\/(ru|ar|en)(\/|$)/, "/") || "/";
+    };
+    if (langNext) {
+      langNext.value = getPathWithoutLang();
+    }
+    langToggle.addEventListener("click", (e) => {
+      e.stopPropagation();
+      langDropdown.classList.toggle("hidden");
+      langArrow?.classList.toggle("rotate-180");
+    });
+    langOptions.forEach((option) => {
+      option.addEventListener("click", () => {
+        const lang = option.dataset.lang;
+        if (langForm && langInput) {
+          langInput.value = lang;
+          if (langNext) {
+            langNext.value = getPathWithoutLang();
+          }
+          langForm.submit();
+        }
+      });
+    });
+    document.addEventListener("click", (e) => {
+      if (!langDropdown.contains(e.target) && !langToggle.contains(e.target)) {
+        langDropdown.classList.add("hidden");
+        langArrow?.classList.remove("rotate-180");
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        langDropdown.classList.add("hidden");
+        langArrow?.classList.remove("rotate-180");
+      }
+    });
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const logo = document.getElementById("hero-logo");
+    const hero = document.getElementById("hero");
+    if (!logo || !hero) return;
+    const updateLogoScale = () => {
+      const heroRect = hero.getBoundingClientRect();
+      const heroHeight = hero.offsetHeight;
+      const scrolled = -heroRect.top;
+      const progress = Math.min(Math.max(scrolled / heroHeight * 2, 0), 1);
+      const scale = 0.7 + progress * 0.3;
+      logo.style.transform = `scale(${scale})`;
+    };
+    window.addEventListener("scroll", updateLogoScale);
+    updateLogoScale();
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const benefitsSection = document.getElementById("benefits");
+    const reserveBtn = benefitsSection?.querySelector(".btn-default.primary");
+    if (!benefitsSection || !reserveBtn) return;
+    reserveBtn.addEventListener("mouseenter", () => {
+      benefitsSection.classList.add("active");
+    });
+    reserveBtn.addEventListener("mouseleave", () => {
+      benefitsSection.classList.remove("active");
+    });
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const slider = document.querySelector(".gallery-slider");
+    if (!slider) return;
+    const slides = slider.querySelectorAll(".gallery-slide");
+    const titles = slider.querySelectorAll(".gallery-title");
+    const dotsContainer = slider.querySelector(".gallery-dots");
+    const prevBtn = slider.querySelector(".gallery-control.prev");
+    const nextBtn = slider.querySelector(".gallery-control.next");
+    if (!slides.length) return;
+    let currentIndex = 0;
+    const totalSlides = slides.length;
+    let autoPlayInterval;
+    const init = () => {
+      slides.forEach((slide, i) => {
+        slide.dataset.index = i;
+        if (i === 0) slide.classList.add("active");
+      });
+      titles.forEach((title, i) => {
+        title.dataset.index = i;
+        if (i === 0) title.classList.add("active");
+      });
+      if (dotsContainer) {
+        dotsContainer.innerHTML = "";
+        for (let i = 0; i < totalSlides; i++) {
+          const dot = document.createElement("button");
+          dot.className = `gallery-dot${i === 0 ? " active" : ""}`;
+          dot.dataset.index = i;
+          dot.setAttribute("aria-label", `Go to slide ${i + 1}`);
+          dot.addEventListener("click", () => {
+            goToSlide(i);
+            resetAutoPlay();
+          });
+          dotsContainer.appendChild(dot);
+        }
+      }
+    };
+    const goToSlide = (index) => {
+      if (index < 0) index = totalSlides - 1;
+      if (index >= totalSlides) index = 0;
+      slides.forEach((slide) => slide.classList.remove("active"));
+      slides[index].classList.add("active");
+      titles.forEach((title) => title.classList.remove("active"));
+      if (titles[index]) titles[index].classList.add("active");
+      const dots = slider.querySelectorAll(".gallery-dot");
+      dots.forEach((dot) => dot.classList.remove("active"));
+      if (dots[index]) dots[index].classList.add("active");
+      currentIndex = index;
+    };
+    const nextSlide = () => goToSlide(currentIndex + 1);
+    const prevSlide = () => goToSlide(currentIndex - 1);
+    prevBtn?.addEventListener("click", () => {
+      prevSlide();
+      resetAutoPlay();
+    });
+    nextBtn?.addEventListener("click", () => {
+      nextSlide();
+      resetAutoPlay();
+    });
+    const startAutoPlay = () => {
+      autoPlayInterval = setInterval(nextSlide, 5e3);
+    };
+    const resetAutoPlay = () => {
+      clearInterval(autoPlayInterval);
+      startAutoPlay();
+    };
+    let touchStartX = 0;
+    slider.addEventListener("touchstart", (e) => {
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+    slider.addEventListener("touchend", (e) => {
+      const diff = touchStartX - e.changedTouches[0].screenX;
+      if (Math.abs(diff) > 50) {
+        diff > 0 ? nextSlide() : prevSlide();
+        resetAutoPlay();
+      }
+    }, { passive: true });
+    slider.setAttribute("tabindex", "0");
+    slider.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowLeft") {
+        prevSlide();
+        resetAutoPlay();
+      } else if (e.key === "ArrowRight") {
+        nextSlide();
+        resetAutoPlay();
+      }
+    });
+    init();
+    startAutoPlay();
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const periodInputs = document.querySelectorAll('input[name="period"]');
+    const addonInputs = document.querySelectorAll('input[name="addons"]');
+    const totalPriceEl = document.getElementById("total-price");
+    const originalPriceEl = document.getElementById("original-price");
+    if (!totalPriceEl) return;
+    const formatPrice = (price) => {
+      return `AED ${price.toLocaleString()}`;
+    };
+    const calculateTotal = () => {
+      let total = 0;
+      let original = 0;
+      let hasDiscount = false;
+      const selectedPeriod = document.querySelector('input[name="period"]:checked');
+      if (selectedPeriod) {
+        total += parseInt(selectedPeriod.dataset.price) || 0;
+        original += parseInt(selectedPeriod.dataset.original) || parseInt(selectedPeriod.dataset.price) || 0;
+        if (selectedPeriod.dataset.discount && parseInt(selectedPeriod.dataset.discount) > 0) {
+          hasDiscount = true;
+        }
+      }
+      addonInputs.forEach((input) => {
+        if (input.checked) {
+          const addonPrice = parseInt(input.dataset.price) || 0;
+          total += addonPrice;
+          original += addonPrice;
+        }
+      });
+      totalPriceEl.textContent = formatPrice(total);
+      if (hasDiscount && original > total) {
+        originalPriceEl.textContent = `/ ${formatPrice(original)}`;
+        originalPriceEl.classList.remove("hidden");
+      } else {
+        originalPriceEl.classList.add("hidden");
+      }
+    };
+    periodInputs.forEach((input) => {
+      input.addEventListener("change", calculateTotal);
+    });
+    addonInputs.forEach((input) => {
+      input.addEventListener("change", calculateTotal);
+    });
+    calculateTotal();
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const copyBtns = document.querySelectorAll("[data-copy-target]");
+    copyBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const targetId = btn.dataset.copyTarget;
+        const targetEl = document.getElementById(targetId);
+        if (!targetEl) return;
+        const text = targetEl.textContent.trim();
+        const successText = btn.dataset.copySuccess || "Copied!";
+        const originalText = btn.textContent;
+        navigator.clipboard.writeText(text).then(() => {
+          btn.textContent = successText;
+          setTimeout(() => {
+            btn.textContent = originalText;
+          }, 2e3);
+        });
+      });
+    });
+  });
+  var leafletMaps = {};
+  function initLeafletMaps() {
+    const mapElements = document.querySelectorAll("#map[data-coordinates]");
+    mapElements.forEach((mapEl) => {
+      const coords = mapEl.dataset.coordinates;
+      if (!coords || leafletMaps[mapEl.id]) return;
+      const [lat, lng] = coords.split(",").map((c) => parseFloat(c.trim()));
+      const map = L.map(mapEl, {
+        zoomControl: false
+      }).setView([lat, lng], 15);
+      L.tileLayer("https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png", {
+        attribution: "\xA9 OpenStreetMap"
+      }).addTo(map);
+      const orangeIcon = L.divIcon({
+        html: `<svg width="40" height="48" viewBox="0 0 40 48" fill="#E26137" xmlns="http://www.w3.org/2000/svg">
                 <path d="M20 0C9 0 0 9 0 20c0 15 20 28 20 28s20-13 20-28c0-11-9-20-20-20zm0 27c-3.9 0-7-3.1-7-7s3.1-7 7-7 7 3.1 7 7-3.1 7-7 7z"/>
                 <circle cx="20" cy="20" r="5" fill="white"/>
-            </svg>`,className:"",iconSize:[40,48],iconAnchor:[20,48]});L.marker([n,d],{icon:s}).addTo(a),p[e.id]=a})}function S(){document.querySelectorAll("[data-tab]").forEach(e=>{e.addEventListener("click",()=>{let o=e.dataset.tab,n=e.closest(".flex.flex-col");if(!n)return;n.querySelectorAll("[data-tab]").forEach(a=>{a.classList.remove("active")}),e.classList.add("active"),n.querySelectorAll("[data-tab-content]").forEach(a=>{a.classList.add("hidden")});let d=n.querySelector(`[data-tab-content="${o}"]`);d&&d.classList.remove("hidden"),o==="location"&&p.map&&setTimeout(()=>{p.map.invalidateSize()},100)})})}document.addEventListener("DOMContentLoaded",()=>{typeof L<"u"&&I(),S()});document.querySelectorAll(".modal-open").forEach(t=>{t.addEventListener("click",()=>{let e=t.dataset.modal,o=t.closest(".modal-overlay");o&&o.classList.remove("active"),document.getElementById(e)?.classList.add("active"),document.body.style.overflow="hidden"})});document.querySelectorAll(".modal-close").forEach(t=>{t.addEventListener("click",()=>{t.closest(".modal-overlay")?.classList.remove("active"),document.body.style.overflow=""})});document.querySelectorAll(".modal-overlay").forEach(t=>{t.addEventListener("click",e=>{e.target===t&&(t.classList.remove("active"),document.body.style.overflow="")})});document.addEventListener("keydown",t=>{t.key==="Escape"&&(document.querySelectorAll(".modal-overlay.active").forEach(e=>{e.classList.remove("active")}),document.body.style.overflow="")});document.addEventListener("DOMContentLoaded",()=>{let t=document.querySelector("#phone");t&&(t.addEventListener("input",e=>{let o=e.target.value.replace(/\D/g,"");e.target.value=o?"+"+o:""}),t.addEventListener("focus",e=>{e.target.value||(e.target.value="+")}),t.addEventListener("blur",e=>{e.target.value==="+"&&(e.target.value="")}))});document.querySelectorAll(".password-toggle").forEach(t=>{t.addEventListener("click",()=>{let e=t.parentElement.querySelector("input"),o=t.querySelector(".eye-open"),n=t.querySelector(".eye-closed");e.type==="password"?(e.type="text",o.classList.remove("hidden"),n.classList.add("hidden")):(e.type="password",o.classList.add("hidden"),n.classList.remove("hidden"))})});document.addEventListener("DOMContentLoaded",()=>{new URLSearchParams(window.location.search).get("reset")==="success"&&(document.getElementById("modal-password-reset-success")?.classList.add("active"),window.history.replaceState({},"",window.location.pathname))});document.addEventListener("DOMContentLoaded",()=>{let t=document.querySelector('form[action*="/booking/"]');if(!t)return;let e=typeof isAuthenticated<"u"?isAuthenticated:!1;if(e){let o=sessionStorage.getItem("pendingBooking");if(o){let n=JSON.parse(o);if(!n.period){sessionStorage.removeItem("pendingBooking");return}sessionStorage.removeItem("pendingBooking");let d=b("csrftoken");if(!d){alert("Session error. Please try again.");return}let a=document.createElement("form");a.setAttribute("method","POST"),a.setAttribute("action",n.url),a.style.display="none";let s=document.createElement("input");s.setAttribute("type","hidden"),s.setAttribute("name","csrfmiddlewaretoken"),s.setAttribute("value",d),a.appendChild(s);let c=document.createElement("input");c.setAttribute("type","hidden"),c.setAttribute("name","period"),c.setAttribute("value",n.period),a.appendChild(c),n.addons&&n.addons.length>0&&n.addons.forEach(i=>{let l=document.createElement("input");l.setAttribute("type","hidden"),l.setAttribute("name","addons"),l.setAttribute("value",i),a.appendChild(l)}),document.body.appendChild(a),a.submit();return}}t.addEventListener("submit",function(o){let n=document.querySelector('input[name="period"]:checked');if(!n){o.preventDefault(),alert("Please select a rental period");return}if(!e){o.preventDefault();let d=n.value,a=[];document.querySelectorAll('input[name="addons"]:checked').forEach(i=>{a.push(i.value)}),sessionStorage.setItem("pendingBooking",JSON.stringify({url:t.action,period:d,addons:a}));let s=encodeURIComponent(window.location.pathname),c=document.getElementById("modal-sign-in");c&&(c.querySelectorAll(".btn-email-login, .btn-google-login, .btn-apple-login, .btn-register-link").forEach(i=>{if(i.getAttribute("href")){let l=i.getAttribute("href").split("?")[0];i.href=l+"?next="+s}}),c.classList.add("active"),document.body.style.overflow="hidden")}})});document.addEventListener("DOMContentLoaded",()=>{let t=document.getElementById("feedback-form");t&&t.addEventListener("submit",async o=>{o.preventDefault();let n=t.querySelector('button[type="submit"]'),d=n.innerHTML;n.disabled=!0,n.innerHTML='<svg class="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';try{let a=new FormData(t),c=await(await fetch(t.dataset.url,{method:"POST",body:a,headers:{"X-Requested-With":"XMLHttpRequest"}})).json();document.getElementById("modal-feedback").classList.remove("active"),c.success?(document.getElementById("modal-feedback-success").classList.add("active"),t.reset()):document.getElementById("modal-feedback-error").classList.add("active")}catch{document.getElementById("modal-feedback").classList.remove("active"),document.getElementById("modal-feedback-error").classList.add("active")}finally{n.disabled=!1,n.innerHTML=d}});let e=document.getElementById("btn-retry-feedback");e&&e.addEventListener("click",()=>{document.getElementById("modal-feedback-error").classList.remove("active"),document.getElementById("modal-feedback").classList.add("active")})});document.addEventListener("DOMContentLoaded",()=>{let t=document.getElementById("user-menu-toggle"),e=document.getElementById("user-menu-dropdown"),o=document.getElementById("user-menu-arrow");t&&e&&(t.addEventListener("click",n=>{n.stopPropagation(),e.classList.toggle("hidden"),o&&o.classList.toggle("rotate-180")}),document.addEventListener("click",n=>{!t.contains(n.target)&&!e.contains(n.target)&&(e.classList.add("hidden"),o&&o.classList.remove("rotate-180"))}))});document.addEventListener("DOMContentLoaded",()=>{let t=document.querySelectorAll(".reveal-card");if(t.length===0)return;let e={root:null,rootMargin:"0px 0px -50px 0px",threshold:.1},o=new IntersectionObserver(n=>{n.forEach(d=>{d.isIntersecting&&(d.target.classList.add("revealed"),o.unobserve(d.target))})},e);t.forEach(n=>{o.observe(n)})});document.addEventListener("DOMContentLoaded",()=>{let t=document.querySelector(".car-slider-container");if(!t)return;let e=t.querySelectorAll(".car-slide");if(e.length<2)return;let o=0,n=4e3;function d(){return new Promise(s=>{let c=0,i=e.length;e.forEach(l=>{l.complete&&l.naturalHeight!==0?(c++,c===i&&s()):(l.addEventListener("load",()=>{c++,c===i&&s()},{once:!0}),l.addEventListener("error",()=>{c++,c===i&&s()},{once:!0}))}),c===i&&s()})}function a(){e[o].classList.remove("active"),o=(o+1)%e.length,e[o].classList.add("active")}d().then(()=>{t.classList.add("loaded"),e.forEach((s,c)=>{s.classList.toggle("active",c===0)}),setInterval(a,n)})});})();
+            </svg>`,
+        className: "",
+        iconSize: [40, 48],
+        iconAnchor: [20, 48]
+      });
+      L.marker([lat, lng], { icon: orangeIcon }).addTo(map);
+      leafletMaps[mapEl.id] = map;
+    });
+  }
+  function initTabs() {
+    const tabButtons = document.querySelectorAll("[data-tab]");
+    tabButtons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const tabId = btn.dataset.tab;
+        const parent = btn.closest(".flex.flex-col");
+        if (!parent) return;
+        parent.querySelectorAll("[data-tab]").forEach((b) => {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        parent.querySelectorAll("[data-tab-content]").forEach((content) => {
+          content.classList.add("hidden");
+        });
+        const activeContent = parent.querySelector(`[data-tab-content="${tabId}"]`);
+        if (activeContent) {
+          activeContent.classList.remove("hidden");
+        }
+        if (tabId === "location" && leafletMaps["map"]) {
+          setTimeout(() => {
+            leafletMaps["map"].invalidateSize();
+          }, 100);
+        }
+      });
+    });
+  }
+  document.addEventListener("DOMContentLoaded", () => {
+    if (typeof L !== "undefined") {
+      initLeafletMaps();
+    }
+    initTabs();
+  });
+  document.querySelectorAll(".modal-open").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const modalId = btn.dataset.modal;
+      const currentModal = btn.closest(".modal-overlay");
+      if (currentModal) {
+        currentModal.classList.remove("active");
+      }
+      document.getElementById(modalId)?.classList.add("active");
+      document.body.style.overflow = "hidden";
+    });
+  });
+  document.querySelectorAll(".modal-close").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      btn.closest(".modal-overlay")?.classList.remove("active");
+      document.body.style.overflow = "";
+    });
+  });
+  document.querySelectorAll(".modal-overlay").forEach((overlay) => {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        overlay.classList.remove("active");
+        document.body.style.overflow = "";
+      }
+    });
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      document.querySelectorAll(".modal-overlay.active").forEach((modal) => {
+        modal.classList.remove("active");
+      });
+      document.body.style.overflow = "";
+    }
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const phoneInput = document.querySelector("#phone");
+    if (phoneInput) {
+      phoneInput.addEventListener("input", (e) => {
+        let value = e.target.value.replace(/\D/g, "");
+        e.target.value = value ? "+" + value : "";
+      });
+      phoneInput.addEventListener("focus", (e) => {
+        if (!e.target.value) {
+          e.target.value = "+";
+        }
+      });
+      phoneInput.addEventListener("blur", (e) => {
+        if (e.target.value === "+") {
+          e.target.value = "";
+        }
+      });
+    }
+  });
+  document.querySelectorAll(".password-toggle").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const input = btn.parentElement.querySelector("input");
+      const eyeOpen = btn.querySelector(".eye-open");
+      const eyeClosed = btn.querySelector(".eye-closed");
+      if (input.type === "password") {
+        input.type = "text";
+        eyeOpen.classList.remove("hidden");
+        eyeClosed.classList.add("hidden");
+      } else {
+        input.type = "password";
+        eyeOpen.classList.add("hidden");
+        eyeClosed.classList.remove("hidden");
+      }
+    });
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("reset") === "success") {
+      document.getElementById("modal-password-reset-success")?.classList.add("active");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const bookingForm = document.querySelector('form[action*="/booking/"]');
+    if (!bookingForm) return;
+    const isAuth = typeof isAuthenticated !== "undefined" ? isAuthenticated : false;
+    if (isAuth) {
+      const pendingBookingStr = sessionStorage.getItem("pendingBooking");
+      if (pendingBookingStr) {
+        const data = JSON.parse(pendingBookingStr);
+        if (!data.period) {
+          sessionStorage.removeItem("pendingBooking");
+          return;
+        }
+        sessionStorage.removeItem("pendingBooking");
+        const csrfToken = getCookie("csrftoken");
+        if (!csrfToken) {
+          alert("Session error. Please try again.");
+          return;
+        }
+        const form = document.createElement("form");
+        form.setAttribute("method", "POST");
+        form.setAttribute("action", data.url);
+        form.style.display = "none";
+        const csrf = document.createElement("input");
+        csrf.setAttribute("type", "hidden");
+        csrf.setAttribute("name", "csrfmiddlewaretoken");
+        csrf.setAttribute("value", csrfToken);
+        form.appendChild(csrf);
+        const period = document.createElement("input");
+        period.setAttribute("type", "hidden");
+        period.setAttribute("name", "period");
+        period.setAttribute("value", data.period);
+        form.appendChild(period);
+        if (data.addons && data.addons.length > 0) {
+          data.addons.forEach((addonId) => {
+            const input = document.createElement("input");
+            input.setAttribute("type", "hidden");
+            input.setAttribute("name", "addons");
+            input.setAttribute("value", addonId);
+            form.appendChild(input);
+          });
+        }
+        document.body.appendChild(form);
+        form.submit();
+        return;
+      }
+    }
+    bookingForm.addEventListener("submit", function(e) {
+      const selectedPeriod = document.querySelector('input[name="period"]:checked');
+      if (!selectedPeriod) {
+        e.preventDefault();
+        alert("Please select a rental period");
+        return;
+      }
+      if (!isAuth) {
+        e.preventDefault();
+        const periodValue = selectedPeriod.value;
+        const addonValues = [];
+        document.querySelectorAll('input[name="addons"]:checked').forEach((input) => {
+          addonValues.push(input.value);
+        });
+        sessionStorage.setItem("pendingBooking", JSON.stringify({
+          url: bookingForm.action,
+          period: periodValue,
+          addons: addonValues
+        }));
+        const nextUrl = encodeURIComponent(window.location.pathname);
+        const modal = document.getElementById("modal-sign-in");
+        if (modal) {
+          modal.querySelectorAll(".btn-email-login, .btn-google-login, .btn-apple-login, .btn-register-link").forEach((link) => {
+            if (link.getAttribute("href")) {
+              const baseUrl = link.getAttribute("href").split("?")[0];
+              link.href = baseUrl + "?next=" + nextUrl;
+            }
+          });
+          modal.classList.add("active");
+          document.body.style.overflow = "hidden";
+        }
+      }
+    });
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const feedbackForm = document.getElementById("feedback-form");
+    if (feedbackForm) {
+      feedbackForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const submitBtn = feedbackForm.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<svg class="animate-spin h-5 w-5 mx-auto" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>';
+        try {
+          const formData = new FormData(feedbackForm);
+          const response = await fetch(feedbackForm.dataset.url, {
+            method: "POST",
+            body: formData,
+            headers: {
+              "X-Requested-With": "XMLHttpRequest"
+            }
+          });
+          const data = await response.json();
+          document.getElementById("modal-feedback").classList.remove("active");
+          if (data.success) {
+            document.getElementById("modal-feedback-success").classList.add("active");
+            feedbackForm.reset();
+          } else {
+            document.getElementById("modal-feedback-error").classList.add("active");
+          }
+        } catch (error) {
+          document.getElementById("modal-feedback").classList.remove("active");
+          document.getElementById("modal-feedback-error").classList.add("active");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = originalText;
+        }
+      });
+    }
+    const retryBtn = document.getElementById("btn-retry-feedback");
+    if (retryBtn) {
+      retryBtn.addEventListener("click", () => {
+        document.getElementById("modal-feedback-error").classList.remove("active");
+        document.getElementById("modal-feedback").classList.add("active");
+      });
+    }
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const userMenuToggle = document.getElementById("user-menu-toggle");
+    const userMenuDropdown = document.getElementById("user-menu-dropdown");
+    const userMenuArrow = document.getElementById("user-menu-arrow");
+    if (userMenuToggle && userMenuDropdown) {
+      userMenuToggle.addEventListener("click", (e) => {
+        e.stopPropagation();
+        userMenuDropdown.classList.toggle("hidden");
+        if (userMenuArrow) {
+          userMenuArrow.classList.toggle("rotate-180");
+        }
+      });
+      document.addEventListener("click", (e) => {
+        if (!userMenuToggle.contains(e.target) && !userMenuDropdown.contains(e.target)) {
+          userMenuDropdown.classList.add("hidden");
+          if (userMenuArrow) {
+            userMenuArrow.classList.remove("rotate-180");
+          }
+        }
+      });
+    }
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const revealCards = document.querySelectorAll(".reveal-card");
+    if (revealCards.length === 0) return;
+    const observerOptions = {
+      root: null,
+      rootMargin: "0px 0px -50px 0px",
+      // Триггер когда элемент на 50px выше нижней границы экрана
+      threshold: 0.1
+    };
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("revealed");
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, observerOptions);
+    revealCards.forEach((card) => {
+      revealObserver.observe(card);
+    });
+  });
+  document.addEventListener("DOMContentLoaded", () => {
+    const sliderContainer = document.querySelector(".car-slider-container");
+    if (!sliderContainer) return;
+    const slides = sliderContainer.querySelectorAll(".car-slide");
+    if (slides.length < 2) return;
+    let currentIndex = 0;
+    const intervalTime = 4e3;
+    function preloadImages() {
+      return new Promise((resolve) => {
+        let loadedCount = 0;
+        const totalImages = slides.length;
+        slides.forEach((img) => {
+          if (img.complete && img.naturalHeight !== 0) {
+            loadedCount++;
+            if (loadedCount === totalImages) resolve();
+          } else {
+            img.addEventListener("load", () => {
+              loadedCount++;
+              if (loadedCount === totalImages) resolve();
+            }, { once: true });
+            img.addEventListener("error", () => {
+              loadedCount++;
+              if (loadedCount === totalImages) resolve();
+            }, { once: true });
+          }
+        });
+        if (loadedCount === totalImages) resolve();
+      });
+    }
+    function nextSlide() {
+      slides[currentIndex].classList.remove("active");
+      currentIndex = (currentIndex + 1) % slides.length;
+      slides[currentIndex].classList.add("active");
+    }
+    preloadImages().then(() => {
+      sliderContainer.classList.add("loaded");
+      slides.forEach((slide, index) => {
+        slide.classList.toggle("active", index === 0);
+      });
+      setInterval(nextSlide, intervalTime);
+    });
+  });
+})();
