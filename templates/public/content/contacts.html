@@ -17,11 +17,11 @@
 <section class="grid md:grid-cols-12 gap-x-4 px-4 border-b border-gray-100 pt-[8rem] lg:pt-[8rem]">
     <div class="lg:col-span-3 col-span-full flex">
         <div class="mt-auto flex-1">
-            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">Contact</p>
+            <p class="uppercase text-sm text-orange-500 font-bold tracking-wider">{{ page.hero_label }}</p>
         </div>
     </div>
     <div class="lg:col-span-5 col-span-full">
-        <h1 class="h1 leading-tight">Сontact us</h1>
+        <h1 class="h1 leading-tight">{{ page.hero_title }}</h1>
     </div>
 </section>
 
@@ -30,30 +30,22 @@
         <div class="flex flex-col gap-8">
             <div class="flex-1">
                 <h2 class="h3 text-black">
-                    Have a question about storage, access, or billing? Reach out to our team — we’ll help you choose the right unit and answer any service questions.
+                    {{ page.hero_subtitle }}
                 </h2>
             </div>
 
+            {% if info_items %}
             <div>
                <ul class="grid grid-cols-2 md:grid-cols-2 gap-x-4 gap-y-6 [ text-sm md:text-base ]">
+                   {% for item in info_items %}
                    <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
-                       <span class="text-black font-bold">Operated by</span>
-                       <span class="text-gray-700">A&M Foxbox General Warehousing LLC</span>
+                       <span class="text-black font-bold">{{ item.label }}</span>
+                       <span class="text-gray-700">{{ item.value }}</span>
                    </li>
-                   <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
-                       <span class="text-black font-bold">Legal Type</span>
-                       <span class="text-gray-700">Limited Liability Company (LLC)</span>
-                   </li>
-                   <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
-                       <span class="text-black font-bold">Trade license no.</span>
-                       <span class="text-gray-700">1582269 (Issued by: Department of Economic Development (DED), Dubai)</span>
-                   </li>
-                   <li class="grid-span-full md:grid-span-1 flex flex-col gap-2 leading-tight">
-                       <span class="text-black font-bold">Business Activity</span>
-                       <span class="text-gray-700">General Warehousing</span>
-                   </li>
+                   {% endfor %}
                </ul>
             </div>
+            {% endif %}
         </div>
     </div>
 </section>

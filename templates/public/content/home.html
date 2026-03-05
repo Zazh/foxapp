@@ -19,24 +19,24 @@
         <div class="flex justify-center w-full">
             <h1 class="h1 text-center">
                 <span class="flex gap-3 justify-center">
-                    Secure Car
+                    {{ page.hero_title_line1 }}
                 </span>
                 <span class="flex gap-2 md:gap-3 justify-center">
-                        <span class="order-1">Storage</span> <span class="order-3">in</span> <span class="order-3">Dubai</span>
+                        <span class="order-1">{{ page.hero_title_line2 }}</span>
                         <span class="w-[3.875rem] md:w-[4.875rem] relative order-2">
                             <img class="absolute left-0 -bottom-1" src="{% static 'dist/images/svgs/logo-fox.svg' %}" alt="">
                         </span>
+                        <span class="order-3">{{ page.hero_title_line3 }}</span>
                 </span>
             </h1>
         </div>
         <div class="flex justify-center flex-wrap gap-3">
             <h5 class="text-center font-medium pt-5 pb-5 text-gray-800 leading-tight px-4 w-full">
-                <span class="md:block">Transparent pricing, fast sign-up, secure parking, and easy booking</span>
-                <span class="md:block">with flexible renewals — with 24/7 access options</span>
+                {{ page.hero_subtitle|safe }}
             </h5>
             <ul class="w-full flex flex-col md:flex-row gap-2 md:gap-4 justify-center">
                 <li class="flex justify-center">
-                    <a href="{% url 'tariff_detail' 'auto' 'standard' %}" class="[ w-[90%] md:w-[12.5rem] ] text-nowrap btn-default primary lg flex justify-center items-center"><span>Reserve your spot</span></a>
+                    <a href="{% if page.hero_cta_primary_url %}{{ page.hero_cta_primary_url }}{% else %}{% url 'tariff_detail' 'auto' 'standard' %}{% endif %}" class="[ w-[90%] md:w-[12.5rem] ] text-nowrap btn-default primary lg flex justify-center items-center"><span>{{ page.hero_cta_primary_text }}</span></a>
                 </li>
                 <li class="flex justify-center">
                     <button class="[ w-[90%] md:w-[12.5rem] ] text-nowrap btn-default outline lg [ flex gap-2 items-center justify-center ] [ modal-open ]" data-modal="modal-locations">
@@ -45,7 +45,7 @@
                                 <path d="M6.70823 19.8709C6.78342 19.9533 6.88929 20 6.99982 20C7.11043 20 7.21594 19.9533 7.29191 19.8709C7.93581 19.1701 9.20742 17.7198 10.4817 15.8844C12.087 13.5724 14 10.1824 14 7.16126C14 3.21236 10.8598 0 6.99982 0C3.14026 0 0 3.21236 0 7.16126C0 10.1845 1.91551 13.5767 3.52238 15.8904C4.79633 17.7256 6.06497 19.1716 6.70823 19.8709ZM6.99982 2.69461C9.35675 2.69461 11.274 4.65666 11.274 7.06784C11.274 9.47809 9.35668 11.4411 6.99982 11.4411C4.64332 11.4411 2.72577 9.47809 2.72577 7.06784C2.72591 4.65666 4.64325 2.69461 6.99982 2.69461Z" fill="currentColor"/>
                             </svg>
                         </span>
-                        <span>Show locations</span>
+                        <span>{{ page.hero_cta_secondary_text }}</span>
                     </button>
                 </li>
             </ul>
@@ -95,25 +95,24 @@
 
 <section class="benefits-section " id="benefits">
     <div class="w-full [ md:w-2xl ] text-center mx-auto px-4">
-        <h2 class="h1 text-orange-500">Free up space</h2>
+        <h2 class="h1 text-orange-500">{{ page.benefits_title }}</h2>
         <p class="lead py-6 text-gray-800">
-            An inspired calligrapher can create pages of beauty using stick ink, quill, brush, pickaxe, buzz saw, or even strawberry jam. Forsaking monastic tradition, twelve jovial friars gave up their vocation for a questionable existence on the flying trapeze.
+            {{ page.benefits_subtitle|safe }}
         </p>
     </div>
     <div class="benefits-container pt-12">
+        {% for benefit in benefits %}
         <div class="benefits-wrap">
             <div class="benefits-card h-[15.5rem]">
                 <div class="p-4 flex flex-wrap h-full">
                     <div class="flex flex-col w-full gap-3 mt-3">
-                        <span>
-                            <svg class="h-5" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </span>
-                        <h5 class="h5">Secure Storage</h5>
+                        {% if benefit.svg_icon %}
+                        <span>{{ benefit.svg_icon|safe }}</span>
+                        {% endif %}
+                        <h5 class="h5">{{ benefit.title }}</h5>
                     </div>
                     <div class="w-full flex items-end">
-                        <p class="small text-gray-700">Cameras, PIN access, monitored entry 24/7</p>
+                        <p class="small text-gray-700">{{ benefit.description }}</p>
                     </div>
                 </div>
             </div>
@@ -122,110 +121,23 @@
                 <div class="line-base"></div>
             </div>
         </div>
-
-        <div class="benefits-wrap">
-            <div class="benefits-card h-[15.5rem]">
-                <div class="p-4 flex flex-wrap h-full">
-                    <div class="flex flex-col w-full gap-3 mt-3">
-                        <span>
-                            <svg class="h-5" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </span>
-                        <h5 class="h5">Second Benefits</h5>
-                    </div>
-                    <div class="w-full flex items-end">
-                        <p class="small text-gray-700">Cameras, PIN access, monitored entry 24/7</p>
-                    </div>
-                </div>
-            </div>
-            <div class="line-block">
-                <div class="line-base"></div>
-                <div class="line-base"></div>
-            </div>
-        </div>
-
-        <div class="benefits-wrap">
-            <div class="benefits-card h-[15.5rem]">
-                <div class="p-4 flex flex-wrap h-full">
-                    <div class="flex flex-col w-full gap-3 mt-3">
-                        <span>
-                            <svg class="h-5" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </span>
-                        <h5 class="h5">Location Benefit</h5>
-                    </div>
-                    <div class="w-full flex items-end">
-                        <p class="small text-gray-700">Cameras, PIN access, monitored entry 24/7</p>
-                    </div>
-                </div>
-            </div>
-            <div class="line-block">
-                <div class="line-base"></div>
-                <div class="line-base"></div>
-            </div>
-        </div>
-
-        <div class="benefits-wrap">
-            <div class="benefits-card h-[15.5rem]">
-                <div class="p-4 flex flex-wrap h-full">
-                    <div class="flex flex-col w-full gap-3 mt-3">
-                        <span>
-                            <svg class="h-5" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </span>
-                        <h5 class="h5">Another One</h5>
-                    </div>
-                    <div class="w-full flex items-end">
-                        <p class="small text-gray-700">Cameras, PIN access, monitored entry 24/7</p>
-                    </div>
-                </div>
-            </div>
-            <div class="line-block">
-                <div class="line-base"></div>
-                <div class="line-base"></div>
-            </div>
-        </div>
-
-        <div class="benefits-wrap">
-            <div class="benefits-card h-[15.5rem]">
-                <div class="p-4 flex flex-wrap h-full">
-                    <div class="flex flex-col w-full gap-3 mt-3">
-                        <span>
-                            <svg class="h-5" viewBox="0 0 20 22" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z" stroke="black" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-                            </svg>
-                        </span>
-                        <h5 class="h5">Secure Storage</h5>
-                    </div>
-                    <div class="w-full flex items-end">
-                        <p class="small text-gray-700">Cameras, PIN access, monitored entry 24/7</p>
-                    </div>
-                </div>
-            </div>
-            <div class="line-block">
-                <div class="line-base"></div>
-                <div class="line-base"></div>
-            </div>
-        </div>
+        {% endfor %}
     </div>
     <div class="w-full flex justify-center">
         <div class="arrow-border"></div>
     </div>
     <div class="w-full flex justify-center pb-12">
         <button class="btn-default primary lg justify-center [ modal-open ]" data-modal="modal-feedback" data-benefits-hover>
-            Reserve your spot
+            {{ page.benefits_cta_text }}
         </button>
     </div>
 </section>
 
 <section id="gallery" class="gallery-section pt-16 pb-8">
     <div class="w-full text-center mx-auto px-4">
-        <h2 class="h1 text-black">Take a look inside</h2>
+        <h2 class="h1 text-black">{{ page.gallery_title }}</h2>
         <p class="lead py-4 text-gray-800">
-            Browse photos of our facility, corridors and storage units
+            {{ page.gallery_subtitle|safe }}
         </p>
     </div>
 
@@ -233,18 +145,11 @@
         <div class="relative">
             <!-- Slides Container -->
             <div class="gallery-slides rounded-3xl md:rounded-4xl aspect-[16/9] lg:aspect-[21/9] overflow-hidden">
+                {% for slide in gallery_slides %}
                 <figure class="gallery-slide">
-                    <img src="{% static 'dist/images/slider/slide-1.jpg' %}" alt="Storage facility entrance" class="w-full h-full object-cover">
+                    <img src="{{ slide.image.url }}" alt="{{ slide.alt_text }}" class="w-full h-full object-cover">
                 </figure>
-                <figure class="gallery-slide">
-                    <img src="{% static 'dist/images/slider/slide-2.jpg' %}" alt="Clean corridors" class="w-full h-full object-cover">
-                </figure>
-                <figure class="gallery-slide">
-                    <img src="{% static 'dist/images/slider/slide-3.jpg' %}" alt="Storage units" class="w-full h-full object-cover">
-                </figure>
-                <figure class="gallery-slide">
-                    <img src="{% static 'dist/images/slider/slide-4.jpg' %}" alt="Storage units" class="w-full h-full object-cover">
-                </figure>
+                {% endfor %}
             </div>
 
             <!-- Controls -->
@@ -259,16 +164,15 @@
                 </svg>
             </button>
 
-            <!-- Dots (генерируются автоматически) -->
+            <!-- Dots -->
             <div class="gallery-dots"></div>
         </div>
 
         <!-- Titles -->
         <div class="gallery-titles text-center mt-6">
-{#            <p class="gallery-title text-lg">Advanced Lift Storage System</p>#}
-            <p class="gallery-title text-lg">Premium Climate Protection</p>
-            <p class="gallery-title text-lg">Ideal for Long-Term Preservation</p>
-            <p class="gallery-title text-lg">Discreet & Secure Facility</p>
+            {% for slide in gallery_slides %}
+            <p class="gallery-title text-lg">{{ slide.caption }}</p>
+            {% endfor %}
         </div>
     </div>
 </section>
@@ -277,9 +181,9 @@
     <div class="dashboard-container">
         <div class="w-full text-center px-4 pt-16 pb-4 lg:pb-12">
             <div>
-                <h2 class="h1 text-orange-500 pb-2">Your personal dashboard</h2>
+                <h2 class="h1 text-orange-500 pb-2">{{ page.dashboard_title }}</h2>
                 <p class="lead py-4 text-gray-800">
-                    Manage your storage unit, transport services and billing <span class="md:block">in one secure online account</span>
+                    {{ page.dashboard_subtitle|safe }}
                 </p>
             </div>
 
@@ -348,80 +252,16 @@
             <!-- Cards dashboard -->
             <div class="flex w-full md:w-5xl justify-center absolute bottom-[1rem]">
                 <ul class="flex gap-4 px-4 w-full justify-start md:justify-center lg:justify-start relative overflow-x-auto scrollbar-hide snap-x snap-mandatory lg:overflow-visible">
-                    <li data-delay="1" class="reveal-card relative snap-center min-w-48 lg:min-w-0 lg:absolute lg:-top-[250px] lg:start-0">
-                            <span class="bg-blue-600 shadow-card text-white w-48 aspect-square p-4 rounded-lg gap-4 flex flex-col ">
-                                <span class="pt-2">
-                                    <svg width="21" height="24" viewBox="0 0 21 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M17.0644 8.74599V6.93788C17.0644 3.11243 13.952 0 10.1262 0C6.30034 0 3.18791 3.11243 3.18791 6.93807V8.74619C1.31283 9.19309 0 10.8438 0 12.8066V19.8213C0 22.1269 1.90644 24 4.21177 24H16.1015C18.4071 24 20.252 22.1269 20.252 19.8213V12.8066C20.252 10.8435 18.9395 9.19289 17.0644 8.74599ZM10.8762 16.6812V19.3477C10.8762 19.4509 10.8601 19.4995 10.7564 19.4995H9.74954C9.64599 19.4995 9.56373 19.4478 9.56373 19.3446V16.6921C8.81374 16.4325 8.52148 15.8468 8.52148 15.1656C8.52148 14.2452 9.24806 13.4939 10.168 13.4966C10.9186 13.4987 11.7996 14.1084 11.7996 14.9827C11.7996 16.045 11.2513 16.4497 10.8762 16.6812ZM15.7516 8.62348H4.50074V6.96575C4.50074 3.86397 7.02459 1.34012 10.1262 1.34012C13.2282 1.34012 15.7516 3.86397 15.7516 6.96556V8.62348Z" fill="white"/>
-                                    </svg>
-                                </span>
-                                <span class="font-medium leading-tight">See your unit number, access hours and location map</span>
-                            </span>
-                            <span class="reveal-arrow absolute -bottom-2 -end-[100px] hidden lg:block rtl:-scale-x-100">
-                                <svg width="125" height="71" viewBox="0 0 125 71" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M124.26 62.8611C124.645 63.2578 124.634 63.8908 124.238 64.2751L117.774 70.5373C117.377 70.9216 116.744 70.9115 116.36 70.5148C115.975 70.1182 115.985 69.4851 116.382 69.1008L122.128 63.5344L116.562 57.7885C116.177 57.3918 116.187 56.7588 116.584 56.3745C116.981 55.9902 117.614 56.0003 117.998 56.3969L124.26 62.8611ZM1.04199 0.0568848L2.04037 0.113703C1.4796 9.96735 6.6973 25.1358 24.6397 38.0835C42.5874 51.035 73.2784 61.7589 123.558 62.557L123.542 63.5569L123.526 64.5568C73.0056 63.7548 41.8633 52.9788 23.4693 39.7053C5.07002 26.4279 -0.562279 10.6464 0.0436096 6.61351e-05L1.04199 0.0568848Z" fill="url(#paint0_linear_325_467)"/>
-                                    <defs>
-                                        <linearGradient id="paint0_linear_325_467" x1="0.541998" y1="7.55688" x2="123.542" y2="70.0569" gradientUnits="userSpaceOnUse">
-                                            <stop stop-color="#989898" stop-opacity="0"/>
-                                            <stop offset="1" stop-color="#1E1E1E"/>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
+                    {% for feature in dashboard_features %}
+                    <li data-delay="{{ forloop.counter }}" class="reveal-card relative snap-center min-w-48 lg:min-w-0 lg:absolute {% if forloop.counter == 1 %}lg:-top-[250px] lg:start-0{% elif forloop.counter == 2 %}lg:-top-[400px] lg:end-[32px]{% elif forloop.counter == 3 %}lg:-top-[100px] lg:end-[16px] xl:-end-[50px]{% endif %}">
+                            <span class="{{ feature.bg_color }} shadow-card text-white w-48 aspect-square p-4 rounded-lg gap-4 flex flex-col">
+                                {% if feature.svg_icon %}
+                                <span class="pt-2">{{ feature.svg_icon|safe }}</span>
+                                {% endif %}
+                                <span class="font-medium leading-tight">{{ feature.text }}</span>
                             </span>
                     </li>
-
-                    <li data-delay="2" class="reveal-card relative snap-center min-w-48 lg:min-w-0 lg:absolute lg:-top-[400px] lg:end-[32px]">
-                            <span class="bg-orange-500 shadow-card text-white w-48 aspect-square p-4 rounded-lg flex flex-col gap-4">
-                                <span class="pt-2">
-                                    <svg width="29" height="20" viewBox="0 0 29 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <path d="M28.5296 8.53119L28.5304 16.0729C28.5304 18.1614 26.9 19.8692 24.8425 19.9928L24.6033 20H3.92817C1.8396 20 0.131832 18.3696 0.00819522 16.3121L0.00102789 16.0729L0 8.53119H28.5296ZM23.1953 13.5369H19.6251L19.4798 13.5467C18.957 13.6176 18.5541 14.0657 18.5541 14.608C18.5541 15.1502 18.957 15.5983 19.4798 15.6692L19.6251 15.679H23.1953L23.3406 15.6692C23.8634 15.5983 24.2663 15.1502 24.2663 14.608C24.2663 14.0657 23.8634 13.6176 23.3406 13.5467L23.1953 13.5369ZM24.6033 0C26.6919 0 28.3996 1.63041 28.5233 3.68791L28.5304 3.92715L28.5296 6.38911H0L0.00102789 3.92715C0.00102789 1.83857 1.63144 0.130803 3.68894 0.00716698L3.92817 0H24.6033Z" fill="white"/>
-                                    </svg>
-                                </span>
-                                <span class="font-medium leading-tight">Track payments, upcoming charges and download invoices anytime</span>
-                            </span>
-                            <span class="reveal-arrow absolute -bottom-[101px] -start-[70px] hidden lg:block rtl:-scale-x-100">
-                                <svg width="104" height="101" viewBox="0 0 104 101" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M0.114792 95.3379C-0.142032 95.8268 0.0461322 96.4314 0.53507 96.6882L8.50276 100.873C8.9917 101.13 9.59626 100.942 9.85308 100.453C10.1099 99.9642 9.92174 99.3596 9.43281 99.1028L2.35041 95.3826L6.07059 88.3002C6.32741 87.8113 6.13925 87.2067 5.65031 86.9499C5.16137 86.6931 4.55681 86.8812 4.29999 87.3702L0.114792 95.3379ZM100.622 0.336153L99.6805 0.672199C102.997 9.96782 102.269 25.9921 88.7055 43.4738C75.1383 60.9608 48.7168 79.9041 0.702911 94.8481L1.00009 95.8029L1.29727 96.7577C49.5415 81.7421 76.3812 62.6215 90.2857 44.6998C104.194 26.7729 105.148 10.0436 101.564 0.000106322L100.622 0.336153Z" fill="url(#paint0_linear_325_474)"/>
-                                    <defs>
-                                        <linearGradient id="paint0_linear_325_474" x1="103.217" y1="7.39079" x2="2.83302" y2="102.039" gradientUnits="userSpaceOnUse">
-                                            <stop stop-color="#989898" stop-opacity="0"/>
-                                            <stop offset="1" stop-color="#1E1E1E"/>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </span>
-                    </li>
-
-                    <li data-delay="3" class="reveal-card relative snap-center min-w-48 lg:min-w-0 lg:absolute lg:-top-[100px] lg:end-[16px] xl:-end-[50px]">
-                            <span class="bg-black shadow-card text-white w-48 aspect-square p-4 rounded-lg flex flex-col gap-4">
-                                <span class="pt-2">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                        <g clip-path="url(#clip0_325_502)">
-                                        <path d="M23.8953 9.50535C23.7158 9.14841 23.3357 8.9314 22.943 8.96557L21.7491 9.05281C20.4542 4.37225 16.1677 0.920166 11.08 0.920166C4.97048 0.920089 0 5.89096 0 12C0 18.1096 4.97048 23.08 11.08 23.08C14.6164 23.08 17.9703 21.3691 20.0517 18.504C20.3711 18.0632 20.2729 17.4479 19.833 17.1276C19.3922 16.8078 18.7765 16.9072 18.457 17.3459C16.7449 19.7028 13.9872 21.1103 11.0795 21.1103C6.05594 21.1103 1.96955 17.0235 1.96955 12.0004C1.96955 6.97719 6.05602 2.89057 11.0796 2.89057C15.1254 2.89057 18.5599 5.5437 19.7445 9.19986L19.1229 9.24534C18.7259 9.274 18.385 9.54029 18.2599 9.91792C18.1343 10.2963 18.2497 10.7127 18.5506 10.9731L20.339 12.5175C20.5131 12.7978 20.8207 12.9852 21.1739 12.9852C21.1924 12.9852 21.2097 12.9811 21.2278 12.9802C21.2337 12.9802 21.2383 12.9828 21.2438 12.9828C21.2675 12.9828 21.2915 12.9824 21.3159 12.9802C21.5763 12.9608 21.8182 12.839 21.9893 12.6414L23.7596 10.5917C24.0209 10.2904 24.074 9.86097 23.8953 9.50535Z" fill="white"/>
-                                        <path d="M5.87061 15.4327V14.4761L6.74292 13.6877C8.21739 12.3687 8.93383 11.6102 8.95444 10.8213C8.95444 10.2705 8.62237 9.83477 7.84279 9.83477C7.26171 9.83477 6.75261 10.1247 6.39947 10.3956L5.95281 9.26291C6.46183 8.87986 7.25071 8.56763 8.16479 8.56763C9.69156 8.56763 10.5326 9.46055 10.5326 10.686C10.5326 11.8179 9.71263 12.7218 8.73618 13.5937L8.11295 14.1129V14.1331H10.6574V15.4319H5.87061V15.4327Z" fill="white"/>
-                                        <path d="M14.4311 15.4328V13.8226H11.4404V12.7952L13.995 8.68188H15.9268V12.6389H16.7367V13.8226H15.9268V15.4328H14.4311ZM14.4311 12.6389V11.1437C14.4311 10.7384 14.4518 10.3237 14.483 9.88712H14.4417C14.223 10.3237 14.0464 10.7181 13.8184 11.1437L12.915 12.6182V12.6389H14.4311Z" fill="white"/>
-                                        </g>
-                                        <defs>
-                                        <clipPath id="clip0_325_502">
-                                        <rect width="24" height="24" fill="white"/>
-                                        </clipPath>
-                                        </defs>
-                                    </svg>
-                                </span>
-                                <span class="font-medium leading-tight">Access your account 24/7 from any device</span>
-                            </span>
-                            <span class="reveal-arrow absolute bottom-[100px] -start-[160px] hidden lg:block rtl:-scale-x-100">
-                                <svg width="140" height="39" viewBox="0 0 140 39" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M0.786834 1.94428C0.247274 2.06215 -0.0945663 2.59511 0.0233099 3.13467L1.94421 11.9273C2.06209 12.4668 2.59505 12.8087 3.13461 12.6908C3.67417 12.5729 4.01601 12.04 3.89813 11.5004L2.19066 3.68476L10.0063 1.97729C10.5459 1.85941 10.8877 1.32645 10.7698 0.786894C10.652 0.247335 10.119 -0.0945035 9.57945 0.0233712L0.786834 1.94428ZM138.177 17.787L137.314 17.282C132.33 25.8009 119.593 35.5508 97.4832 36.4115C75.3672 37.2725 43.8674 29.2284 1.54016 2.0795L1.00027 2.92124L0.460376 3.76297C42.9906 31.0421 74.8951 39.2924 97.561 38.41C120.234 37.5274 133.656 27.4962 139.04 18.292L138.177 17.787Z" fill="url(#paint0_linear_325_498)"/>
-                                    <defs>
-                                        <linearGradient id="paint0_linear_325_498" x1="134.445" y1="24.3115" x2="-2.59543" y2="8.33612" gradientUnits="userSpaceOnUse">
-                                            <stop stop-color="#989898" stop-opacity="0"/>
-                                            <stop offset="1" stop-color="#1E1E1E"/>
-                                        </linearGradient>
-                                    </defs>
-                                </svg>
-                            </span>
-                    </li>
+                    {% endfor %}
                 </ul>
             </div>
             <!-- Cards dashboard -->
@@ -433,8 +273,7 @@
     <div class="feedback_manager-container px-4">
         <div class="w-full">
             <h3 class="h3 text-center leading-tight">
-                Not sure which plan to choose? Submit a request
-                <span class="md:block">and our manager will help you choose</span>
+                {{ feedback_cta.title|safe }}
             </h3>
         </div>
         <div class="w-full text-center overflow-hidden">
@@ -461,7 +300,7 @@
                         </defs>
                     </svg>
                 </span>
-                <span>Submit a request</span>
+                <span>{{ feedback_cta.cta_text }}</span>
             </button>
         </div>
     </div>

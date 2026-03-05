@@ -1,0 +1,407 @@
+[
+  {
+    "model": "pages.homepage",
+    "pk": 1,
+    "fields": {
+      "hero_title_line1": "Secure Car",
+      "hero_title_line1_en": "Secure Car",
+      "hero_title_line1_ru": null,
+      "hero_title_line1_ar": null,
+      "hero_title_line2": "Storage",
+      "hero_title_line2_en": "Storage",
+      "hero_title_line2_ru": null,
+      "hero_title_line2_ar": null,
+      "hero_title_line3": "in Dubai",
+      "hero_title_line3_en": "in Dubai",
+      "hero_title_line3_ru": null,
+      "hero_title_line3_ar": null,
+      "hero_subtitle": "Transparent pricing, fast sign-up, secure parking, and easy booking <br> with flexible renewals \u2014 with 24/7 access options",
+      "hero_subtitle_en": "Transparent pricing, fast sign-up, secure parking, and easy booking <br> with flexible renewals \u2014 with 24/7 access options",
+      "hero_subtitle_ru": "",
+      "hero_subtitle_ar": "",
+      "hero_cta_primary_text": "Reserve your spot",
+      "hero_cta_primary_text_en": "Reserve your spot",
+      "hero_cta_primary_text_ru": null,
+      "hero_cta_primary_text_ar": null,
+      "hero_cta_primary_url": "",
+      "hero_cta_secondary_text": "Show locations",
+      "hero_cta_secondary_text_en": "Show locations",
+      "hero_cta_secondary_text_ru": null,
+      "hero_cta_secondary_text_ar": null,
+      "benefits_title": "Free up space",
+      "benefits_title_en": "Free up space",
+      "benefits_title_ru": null,
+      "benefits_title_ar": null,
+      "benefits_subtitle": "",
+      "benefits_subtitle_en": "",
+      "benefits_subtitle_ru": "",
+      "benefits_subtitle_ar": "",
+      "benefits_cta_text": "Reserve your spot",
+      "benefits_cta_text_en": "Reserve your spot",
+      "benefits_cta_text_ru": null,
+      "benefits_cta_text_ar": null,
+      "gallery_title": "Take a look inside",
+      "gallery_title_en": "Take a look inside",
+      "gallery_title_ru": null,
+      "gallery_title_ar": null,
+      "gallery_subtitle": "Browse photos of our facility, corridors and storage units",
+      "gallery_subtitle_en": "Browse photos of our facility, corridors and storage units",
+      "gallery_subtitle_ru": "",
+      "gallery_subtitle_ar": "",
+      "dashboard_title": "Your personal dashboard",
+      "dashboard_title_en": "Your personal dashboard",
+      "dashboard_title_ru": "",
+      "dashboard_title_ar": "",
+      "dashboard_subtitle": "Manage your storage unit, transport services and billing <span class=\"md:block\">in one secure online account</span>",
+      "dashboard_subtitle_en": "Manage your storage unit, transport services and billing <span class=\"md:block\">in one secure online account</span>",
+      "dashboard_subtitle_ru": "",
+      "dashboard_subtitle_ar": ""
+    }
+  },
+  {
+    "model": "pages.homebenefit",
+    "pk": 1,
+    "fields": {
+      "page": 1,
+      "title": "Secure Storage",
+      "title_en": "Secure Storage",
+      "title_ru": null,
+      "title_ar": null,
+      "description": "Cameras, PIN access, monitored entry 24/7",
+      "description_en": "Cameras, PIN access, monitored entry 24/7",
+      "description_ru": null,
+      "description_ar": null,
+      "svg_icon": "<svg class=\"h-5\" viewBox=\"0 0 20 22\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "pages.homebenefit",
+    "pk": 2,
+    "fields": {
+      "page": 1,
+      "title": "Second Benefits",
+      "title_en": "Second Benefits",
+      "title_ru": null,
+      "title_ar": null,
+      "description": "Cameras, PIN access, monitored entry 24/7",
+      "description_en": "Cameras, PIN access, monitored entry 24/7",
+      "description_ru": null,
+      "description_ar": null,
+      "svg_icon": "<svg class=\"h-5\" viewBox=\"0 0 20 22\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "pages.homebenefit",
+    "pk": 3,
+    "fields": {
+      "page": 1,
+      "title": "Location Benefit",
+      "title_en": "Location Benefit",
+      "title_ru": null,
+      "title_ar": null,
+      "description": "Cameras, PIN access, monitored entry 24/7",
+      "description_en": "Cameras, PIN access, monitored entry 24/7",
+      "description_ru": null,
+      "description_ar": null,
+      "svg_icon": "<svg class=\"h-5\" viewBox=\"0 0 20 22\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "pages.homebenefit",
+    "pk": 4,
+    "fields": {
+      "page": 1,
+      "title": "Another One",
+      "title_en": "Another One",
+      "title_ru": null,
+      "title_ar": null,
+      "description": "Cameras, PIN access, monitored entry 24/7",
+      "description_en": "Cameras, PIN access, monitored entry 24/7",
+      "description_ru": null,
+      "description_ar": null,
+      "svg_icon": "<svg class=\"h-5\" viewBox=\"0 0 20 22\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+      "sort_order": 4
+    }
+  },
+  {
+    "model": "pages.homebenefit",
+    "pk": 5,
+    "fields": {
+      "page": 1,
+      "title": "Secure Storage",
+      "title_en": "Secure Storage",
+      "title_ru": null,
+      "title_ar": null,
+      "description": "Cameras, PIN access, monitored entry 24/7",
+      "description_en": "Cameras, PIN access, monitored entry 24/7",
+      "description_ru": null,
+      "description_ar": null,
+      "svg_icon": "<svg class=\"h-5\" viewBox=\"0 0 20 22\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M18.5 4.66667C18.5 4.66667 17.6333 4.66667 17.4376 4.66667C14.5349 4.66667 12.005 3.54234 9.99989 1.5C7.99485 3.54227 5.46524 4.66667 2.5626 4.66667C2.36688 4.66667 1.5001 4.66667 1.5001 4.66667C1.5001 4.66667 1.5 6.77778 1.5 8.00867C1.5 14.0185 5.11186 19.0682 10 20.5C14.8881 19.0682 18.5 14.0185 18.5 8.00867C18.5 6.77778 18.5 4.66667 18.5 4.66667Z\" stroke=\"black\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>",
+      "sort_order": 5
+    }
+  },
+  {
+    "model": "pages.homedashboardfeature",
+    "pk": 1,
+    "fields": {
+      "page": 1,
+      "text": "See your unit number, access hours and location map",
+      "text_en": "See your unit number, access hours and location map",
+      "text_ru": null,
+      "text_ar": null,
+      "svg_icon": "<svg width=\"21\" height=\"24\" viewBox=\"0 0 21 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M17.0644 8.74599V6.93788C17.0644 3.11243 13.952 0 10.1262 0C6.30034 0 3.18791 3.11243 3.18791 6.93807V8.74619C1.31283 9.19309 0 10.8438 0 12.8066V19.8213C0 22.1269 1.90644 24 4.21177 24H16.1015C18.4071 24 20.252 22.1269 20.252 19.8213V12.8066C20.252 10.8435 18.9395 9.19289 17.0644 8.74599ZM10.8762 16.6812V19.3477C10.8762 19.4509 10.8601 19.4995 10.7564 19.4995H9.74954C9.64599 19.4995 9.56373 19.4478 9.56373 19.3446V16.6921C8.81374 16.4325 8.52148 15.8468 8.52148 15.1656C8.52148 14.2452 9.24806 13.4939 10.168 13.4966C10.9186 13.4987 11.7996 14.1084 11.7996 14.9827C11.7996 16.045 11.2513 16.4497 10.8762 16.6812ZM15.7516 8.62348H4.50074V6.96575C4.50074 3.86397 7.02459 1.34012 10.1262 1.34012C13.2282 1.34012 15.7516 3.86397 15.7516 6.96556V8.62348Z\" fill=\"white\"/></svg>",
+      "bg_color": "bg-blue-600",
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "pages.homedashboardfeature",
+    "pk": 2,
+    "fields": {
+      "page": 1,
+      "text": "Track payments, upcoming charges and download invoices anytime",
+      "text_en": "Track payments, upcoming charges and download invoices anytime",
+      "text_ru": null,
+      "text_ar": null,
+      "svg_icon": "<svg width=\"29\" height=\"20\" viewBox=\"0 0 29 20\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><path d=\"M28.5296 8.53119L28.5304 16.0729C28.5304 18.1614 26.9 19.8692 24.8425 19.9928L24.6033 20H3.92817C1.8396 20 0.131832 18.3696 0.00819522 16.3121L0.00102789 16.0729L0 8.53119H28.5296ZM23.1953 13.5369H19.6251L19.4798 13.5467C18.957 13.6176 18.5541 14.0657 18.5541 14.608C18.5541 15.1502 18.957 15.5983 19.4798 15.6692L19.6251 15.679H23.1953L23.3406 15.6692C23.8634 15.5983 24.2663 15.1502 24.2663 14.608C24.2663 14.0657 23.8634 13.6176 23.3406 13.5467L23.1953 13.5369ZM24.6033 0C26.6919 0 28.3996 1.63041 28.5233 3.68791L28.5304 3.92715L28.5296 6.38911H0L0.00102789 3.92715C0.00102789 1.83857 1.63144 0.130803 3.68894 0.00716698L3.92817 0H24.6033Z\" fill=\"white\"/></svg>",
+      "bg_color": "bg-orange-500",
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "pages.homedashboardfeature",
+    "pk": 3,
+    "fields": {
+      "page": 1,
+      "text": "Access your account 24/7 from any device",
+      "text_en": "Access your account 24/7 from any device",
+      "text_ru": null,
+      "text_ar": null,
+      "svg_icon": "<svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><g clip-path=\"url(#clip0_325_502)\"><path d=\"M23.8953 9.50535C23.7158 9.14841 23.3357 8.9314 22.943 8.96557L21.7491 9.05281C20.4542 4.37225 16.1677 0.920166 11.08 0.920166C4.97048 0.920089 0 5.89096 0 12C0 18.1096 4.97048 23.08 11.08 23.08C14.6164 23.08 17.9703 21.3691 20.0517 18.504C20.3711 18.0632 20.2729 17.4479 19.833 17.1276C19.3922 16.8078 18.7765 16.9072 18.457 17.3459C16.7449 19.7028 13.9872 21.1103 11.0795 21.1103C6.05594 21.1103 1.96955 17.0235 1.96955 12.0004C1.96955 6.97719 6.05602 2.89057 11.0796 2.89057C15.1254 2.89057 18.5599 5.5437 19.7445 9.19986L19.1229 9.24534C18.7259 9.274 18.385 9.54029 18.2599 9.91792C18.1343 10.2963 18.2497 10.7127 18.5506 10.9731L20.339 12.5175C20.5131 12.7978 20.8207 12.9852 21.1739 12.9852C21.1924 12.9852 21.2097 12.9811 21.2278 12.9802C21.2337 12.9802 21.2383 12.9828 21.2438 12.9828C21.2675 12.9828 21.2915 12.9824 21.3159 12.9802C21.5763 12.9608 21.8182 12.839 21.9893 12.6414L23.7596 10.5917C24.0209 10.2904 24.074 9.86097 23.8953 9.50535Z\" fill=\"white\"/><path d=\"M5.87061 15.4327V14.4761L6.74292 13.6877C8.21739 12.3687 8.93383 11.6102 8.95444 10.8213C8.95444 10.2705 8.62237 9.83477 7.84279 9.83477C7.26171 9.83477 6.75261 10.1247 6.39947 10.3956L5.95281 9.26291C6.46183 8.87986 7.25071 8.56763 8.16479 8.56763C9.69156 8.56763 10.5326 9.46055 10.5326 10.686C10.5326 11.8179 9.71263 12.7218 8.73618 13.5937L8.11295 14.1129V14.1331H10.6574V15.4319H5.87061V15.4327Z\" fill=\"white\"/><path d=\"M14.4311 15.4328V13.8226H11.4404V12.7952L13.995 8.68188H15.9268V12.6389H16.7367V13.8226H15.9268V15.4328H14.4311ZM14.4311 12.6389V11.1437C14.4311 10.7384 14.4518 10.3237 14.483 9.88712H14.4417C14.223 10.3237 14.0464 10.7181 13.8184 11.1437L12.915 12.6182V12.6389H14.4311Z\" fill=\"white\"/></g><defs><clipPath id=\"clip0_325_502\"><rect width=\"24\" height=\"24\" fill=\"white\"/></clipPath></defs></svg>",
+      "bg_color": "bg-black",
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "pages.aboutpage",
+    "pk": 1,
+    "fields": {
+      "hero_label": "About",
+      "hero_label_en": "About",
+      "hero_label_ru": null,
+      "hero_label_ar": null,
+      "hero_title": "A&M Foxbox",
+      "hero_title_en": "A&M Foxbox",
+      "hero_title_ru": null,
+      "hero_title_ar": null,
+      "hero_subtitle": "Foxbox is a premium car storage <span class=\"md:block\">facility located in Dubai.</span>",
+      "hero_subtitle_en": "Foxbox is a premium car storage <span class=\"md:block\">facility located in Dubai.</span>",
+      "hero_subtitle_ru": "",
+      "hero_subtitle_ar": "",
+      "hero_block_title": "What we offer",
+      "hero_block_title_en": "What we offer",
+      "hero_block_title_ru": null,
+      "hero_block_title_ar": null,
+      "hero_block_text": "We provide secure, professionally managed indoor storage for vehicles, designed for owners who value protection, privacy, and peace of mind.",
+      "hero_block_text_en": "We provide secure, professionally managed indoor storage for vehicles, designed for owners who value protection, privacy, and peace of mind.",
+      "hero_block_text_ru": null,
+      "hero_block_text_ar": null,
+      "hero_image": "",
+      "hero_image_alt": "foxbox",
+      "hero_image_alt_en": "foxbox",
+      "hero_image_alt_ru": null,
+      "hero_image_alt_ar": null,
+      "offers_label": "Offers",
+      "offers_label_en": "Offers",
+      "offers_label_ru": null,
+      "offers_label_ar": null,
+      "offers_title": "Our facility offers",
+      "offers_title_en": "Our facility offers",
+      "offers_title_ru": null,
+      "offers_title_ar": null,
+      "offers_description": "Foxbox is built for car enthusiasts, collectors, seasonal residents, and owners who want their vehicle protected when not in use",
+      "offers_description_en": "Foxbox is built for car enthusiasts, collectors, seasonal residents, and owners who want their vehicle protected when not in use",
+      "offers_description_ru": null,
+      "offers_description_ar": null,
+      "offers_text": "Every vehicle stored at FOXBOX is treated with care and handled with responsibility. Our focus is simple \u2014 safety, discretion, and high standards.",
+      "offers_text_en": "Every vehicle stored at FOXBOX is treated with care and handled with responsibility. Our focus is simple \u2014 safety, discretion, and high standards.",
+      "offers_text_ru": null,
+      "offers_text_ar": null,
+      "offers_closing": "Your car. Properly stored. Properly protected",
+      "offers_closing_en": "Your car. Properly stored. Properly protected",
+      "offers_closing_ru": null,
+      "offers_closing_ar": null
+    }
+  },
+  {
+    "model": "pages.aboutofferitem",
+    "pk": 1,
+    "fields": {
+      "page": 1,
+      "text": "Secure indoor storage environment",
+      "text_en": "Secure indoor storage environment",
+      "text_ru": null,
+      "text_ar": null,
+      "sort_order": 0
+    }
+  },
+  {
+    "model": "pages.aboutofferitem",
+    "pk": 2,
+    "fields": {
+      "page": 1,
+      "text": "24/7 CCTV monitoring",
+      "text_en": "24/7 CCTV monitoring",
+      "text_ru": null,
+      "text_ar": null,
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "pages.aboutofferitem",
+    "pk": 3,
+    "fields": {
+      "page": 1,
+      "text": "Controlled and restricted access",
+      "text_en": "Controlled and restricted access",
+      "text_ru": null,
+      "text_ar": null,
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "pages.aboutofferitem",
+    "pk": 4,
+    "fields": {
+      "page": 1,
+      "text": "Professional vehicle handling",
+      "text_en": "Professional vehicle handling",
+      "text_ru": null,
+      "text_ar": null,
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "pages.aboutofferitem",
+    "pk": 5,
+    "fields": {
+      "page": 1,
+      "text": "Clean, organized storage layout",
+      "text_en": "Clean, organized storage layout",
+      "text_ru": null,
+      "text_ar": null,
+      "sort_order": 4
+    }
+  },
+  {
+    "model": "pages.aboutofferitem",
+    "pk": 6,
+    "fields": {
+      "page": 1,
+      "text": "Flexible storage terms",
+      "text_en": "Flexible storage terms",
+      "text_ru": null,
+      "text_ar": null,
+      "sort_order": 5
+    }
+  },
+  {
+    "model": "pages.contactspage",
+    "pk": 1,
+    "fields": {
+      "hero_label": "Contact",
+      "hero_label_en": "Contact",
+      "hero_label_ru": null,
+      "hero_label_ar": null,
+      "hero_title": "Contact us",
+      "hero_title_en": "Contact us",
+      "hero_title_ru": null,
+      "hero_title_ar": null,
+      "hero_subtitle": "Have a question about storage, access, or billing? Reach out to our team \u2014 we\u2019ll help you choose the right unit and answer any service questions.",
+      "hero_subtitle_en": "Have a question about storage, access, or billing? Reach out to our team \u2014 we\u2019ll help you choose the right unit and answer any service questions.",
+      "hero_subtitle_ru": null,
+      "hero_subtitle_ar": null
+    }
+  },
+  {
+    "model": "pages.contactinfoitem",
+    "pk": 1,
+    "fields": {
+      "page": 1,
+      "label": "Operated by",
+      "label_en": "Operated by",
+      "label_ru": null,
+      "label_ar": null,
+      "value": "A&M Foxbox General Warehousing LLC",
+      "value_en": "A&M Foxbox General Warehousing LLC",
+      "value_ru": null,
+      "value_ar": null,
+      "sort_order": 0
+    }
+  },
+  {
+    "model": "pages.contactinfoitem",
+    "pk": 2,
+    "fields": {
+      "page": 1,
+      "label": "Legal Type",
+      "label_en": "Legal Type",
+      "label_ru": null,
+      "label_ar": null,
+      "value": "Limited Liability Company (LLC)",
+      "value_en": "Limited Liability Company (LLC)",
+      "value_ru": null,
+      "value_ar": null,
+      "sort_order": 1
+    }
+  },
+  {
+    "model": "pages.contactinfoitem",
+    "pk": 3,
+    "fields": {
+      "page": 1,
+      "label": "Trade license no.",
+      "label_en": "Trade license no.",
+      "label_ru": null,
+      "label_ar": null,
+      "value": "1582269 (Issued by: Department of Economic Development (DED), Dubai)",
+      "value_en": "1582269 (Issued by: Department of Economic Development (DED), Dubai)",
+      "value_ru": null,
+      "value_ar": null,
+      "sort_order": 2
+    }
+  },
+  {
+    "model": "pages.contactinfoitem",
+    "pk": 4,
+    "fields": {
+      "page": 1,
+      "label": "Business Activity",
+      "label_en": "Business Activity",
+      "label_ru": null,
+      "label_ar": null,
+      "value": "General Warehousing",
+      "value_en": "General Warehousing",
+      "value_ru": null,
+      "value_ar": null,
+      "sort_order": 3
+    }
+  },
+  {
+    "model": "pages.feedbackcta",
+    "pk": 1,
+    "fields": {
+      "title": "Not sure which plan to choose? Submit a request <span class=\"md:block\">and our manager will help you choose.</span>",
+      "title_en": "Not sure which plan to choose? Submit a request <span class=\"md:block\">and our manager will help you choose.</span>",
+      "title_ru": "",
+      "title_ar": "",
+      "cta_text": "Submit a request",
+      "cta_text_en": "Submit a request",
+      "cta_text_ru": "",
+      "cta_text_ar": ""
+    }
+  }
+]

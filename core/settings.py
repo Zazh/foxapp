@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'notifications',
     'feedback',
     'backoffice',
+    'pages',
 
 ]
 
@@ -90,6 +91,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'django.template.context_processors.i18n',
                 'locations.context_processors.locations',
+                'pages.context_processors.feedback_cta',
 
                 'core.context_processors.cache_buster', # убрать на проде
             ],

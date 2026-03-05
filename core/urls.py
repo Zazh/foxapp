@@ -7,6 +7,7 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 from accounts.views import telegram_webhook
+from pages.views import HomePageView, AboutPageView, ContactsPageView
 
 
 # Защищённый TemplateView
@@ -48,10 +49,10 @@ urlpatterns += i18n_patterns(
     path('backoffice/', include('backoffice.urls', namespace='backoffice')),
 
     # Public
-    path('', TemplateView.as_view(template_name='public/content/home.html'), name='home'),
-    path('about/', TemplateView.as_view(template_name='public/content/about.html'), name='about'),
+    path('', HomePageView.as_view(), name='home'),
+    path('about/', AboutPageView.as_view(), name='about'),
     path('tarif-detail/', TemplateView.as_view(template_name='public/content/tariff_detail.html'), name='tarif_detail'),
-    path('contacts/', TemplateView.as_view(template_name='public/content/contacts.html'), name='contacts'),
+    path('contacts/', ContactsPageView.as_view(), name='contacts'),
 
     # Backoffice (тоже защищённый)
     path('backoffice/', ProtectedTemplateView.as_view(template_name='backoffice/dashboard/cabinet.html'), name='backoffice_dashboard'),
