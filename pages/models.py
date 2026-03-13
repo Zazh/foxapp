@@ -444,6 +444,85 @@ class ContactInfoItem(models.Model):
         return self.label
 
 
+class NavLink(models.Model):
+    """Navigation link for header/sidebar/footer"""
+
+    PAGE_CHOICES = [
+        ('home', _('Home')),
+        ('about', _('About')),
+        ('contacts', _('Contacts')),
+        ('custom', _('Custom URL')),
+    ]
+
+    title = models.CharField(_('Title'), max_length=100)
+    page = models.CharField(
+        _('Page'), max_length=50, choices=PAGE_CHOICES, default='custom',
+    )
+    custom_url = models.CharField(
+        _('Custom URL'), max_length=500, blank=True, default='',
+        help_text=_('Only for "Custom URL" page type, e.g. /services/auto/standard/'),
+    )
+    open_in_new_tab = models.BooleanField(_('Open in new tab'), default=False)
+    is_active = models.BooleanField(_('Active'), default=True)
+    sort_order = models.PositiveIntegerField(_('Sort order'), default=0)
+
+    class Meta:
+        ordering = ['sort_order']
+        verbose_name = _('Navigation link')
+        verbose_name_plural = _('Navigation links')
+
+    def __str__(self):
+        return self.title
+
+    def get_url(self):
+        if self.page == 'custom':
+            return self.custom_url
+        from django.urls import reverse
+        return reverse(self.page)
+
+    def is_current(self, request):
+        url = self.get_url()
+        if not url:
+            return False
+        # Strip language prefix for comparison
+        path = request.path
+        if self.page == 'home':
+            return path == url or path.rstrip('/') == url.rstrip('/')
+        return path.startswith(url)
+
+
+class SocialLink(models.Model):
+    """Social media link for footer"""
+
+    PLATFORM_CHOICES = [
+        ('instagram', 'Instagram'),
+        ('threads', 'Threads'),
+        ('whatsapp', 'WhatsApp'),
+        ('tiktok', 'TikTok'),
+        ('youtube', 'YouTube'),
+        ('telegram', 'Telegram'),
+        ('facebook', 'Facebook'),
+        ('x', 'X (Twitter)'),
+    ]
+
+    platform = models.CharField(
+        _('Platform'),
+        max_length=20,
+        choices=PLATFORM_CHOICES,
+    )
+    url = models.URLField(_('URL'), max_length=500)
+    is_active = models.BooleanField(_('Active'), default=True)
+    sort_order = models.PositiveIntegerField(_('Sort order'), default=0)
+
+    class Meta:
+        ordering = ['sort_order']
+        verbose_name = _('Social link')
+        verbose_name_plural = _('Social links')
+
+    def __str__(self):
+        return self.get_platform_display()
+
+
 class FeedbackCTA(models.Model):
     """Singleton model for shared feedback CTA block"""
 

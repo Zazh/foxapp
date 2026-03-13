@@ -3,6 +3,7 @@ from modeltranslation.admin import TabbedTranslationAdmin, TranslationTabularInl
 from .models import (
     HomePage, HomeBenefit, HomeGallerySlide, HomeDashboardFeature,
     AboutPage, AboutOfferItem, ContactsPage, ContactInfoItem, FeedbackCTA,
+    NavLink, SocialLink,
 )
 
 
@@ -130,6 +131,29 @@ class ContactsPageAdmin(TabbedTranslationAdmin):
 
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+@admin.register(NavLink)
+class NavLinkAdmin(TabbedTranslationAdmin):
+    list_display = ('title', 'page', 'get_resolved_url', 'is_active', 'sort_order')
+    list_editable = ('is_active', 'sort_order')
+    list_filter = ('is_active', 'page')
+    ordering = ('sort_order',)
+
+    @admin.display(description='URL')
+    def get_resolved_url(self, obj):
+        try:
+            return obj.get_url()
+        except Exception:
+            return '—'
+
+
+@admin.register(SocialLink)
+class SocialLinkAdmin(admin.ModelAdmin):
+    list_display = ('platform', 'url', 'is_active', 'sort_order')
+    list_editable = ('is_active', 'sort_order')
+    list_filter = ('is_active', 'platform')
+    ordering = ('sort_order',)
 
 
 @admin.register(FeedbackCTA)

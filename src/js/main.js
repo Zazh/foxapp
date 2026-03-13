@@ -272,6 +272,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const addonInputs = document.querySelectorAll('input[name="addons"]');
     const totalPriceEl = document.getElementById('total-price');
     const originalPriceEl = document.getElementById('original-price');
+    const qtyInput = document.getElementById('quantity-input');
+    const qtyMinus = document.getElementById('qty-minus');
+    const qtyPlus = document.getElementById('qty-plus');
 
     if (!totalPriceEl) return;
 
@@ -279,18 +282,76 @@ document.addEventListener('DOMContentLoaded', () => {
         return `AED ${price.toLocaleString()}`;
     };
 
+    const getQuantity = () => {
+        return Math.max(1, parseInt(qtyInput?.value) || 1);
+    };
+
+    // Найти цену за единицу из тиров по количеству
+    const getTierPrice = (tiers, qty) => {
+        if (!tiers || !tiers.length) return null;
+        for (const tier of tiers) {
+            if (qty >= tier.min && (tier.max === null || qty <= tier.max)) {
+                return tier;
+            }
+        }
+        return tiers[0]; // fallback
+    };
+
+    // Обновить цены в карточках периодов
+    const updateCardPrices = () => {
+        const qty = getQuantity();
+        periodInputs.forEach(input => {
+            const tiers = JSON.parse(input.dataset.tiers || '[]');
+            const tier = getTierPrice(tiers, qty);
+            if (!tier) return;
+
+            const card = input.closest('.pricing-card');
+            if (!card) return;
+
+            const priceEl = card.querySelector('.period-price');
+            const discountEl = card.querySelector('.period-discount');
+
+            if (priceEl) {
+                priceEl.textContent = `AED ${Math.round(tier.price).toLocaleString()}`;
+            }
+
+            if (discountEl) {
+                if (tier.original && tier.original > tier.price) {
+                    const pct = Math.round((1 - tier.price / tier.original) * 100);
+                    discountEl.textContent = `/ ${pct}% off`;
+                    discountEl.classList.remove('hidden');
+                } else {
+                    discountEl.classList.add('hidden');
+                }
+            }
+
+            // Обновляем data-price для calculateTotal
+            input.dataset.price = tier.price;
+        });
+    };
+
     const calculateTotal = () => {
+        const qty = getQuantity();
         let total = 0;
         let original = 0;
         let hasDiscount = false;
 
-        // Период
+        // Обновить карточки
+        updateCardPrices();
+
+        // Период * количество
         const selectedPeriod = document.querySelector('input[name="period"]:checked');
         if (selectedPeriod) {
-            total += parseInt(selectedPeriod.dataset.price) || 0;
-            original += parseInt(selectedPeriod.dataset.original) || parseInt(selectedPeriod.dataset.price) || 0;
-            if (selectedPeriod.dataset.discount && parseInt(selectedPeriod.dataset.discount) > 0) {
-                hasDiscount = true;
+            const tiers = JSON.parse(selectedPeriod.dataset.tiers || '[]');
+            const tier = getTierPrice(tiers, qty);
+            if (tier) {
+                total += tier.price * qty;
+                if (tier.original && tier.original > tier.price) {
+                    original += tier.original * qty;
+                    hasDiscount = true;
+                } else {
+                    original += tier.price * qty;
+                }
             }
         }
 
@@ -313,6 +374,22 @@ document.addEventListener('DOMContentLoaded', () => {
             originalPriceEl.classList.add('hidden');
         }
     };
+
+    // Quantity +/- buttons
+    if (qtyMinus && qtyPlus && qtyInput) {
+        qtyMinus.addEventListener('click', () => {
+            const current = getQuantity();
+            if (current > 1) {
+                qtyInput.value = current - 1;
+                calculateTotal();
+            }
+        });
+
+        qtyPlus.addEventListener('click', () => {
+            qtyInput.value = getQuantity() + 1;
+            calculateTotal();
+        });
+    }
 
     // Слушаем изменения
     periodInputs.forEach(input => {
@@ -659,10 +736,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
 document.addEventListener('DOMContentLoaded', () => {
     const feedbackForm = document.getElementById('feedback-form');
+    const COOLDOWN_KEY = 'feedback_cooldown';
+    const COOLDOWN_MS = 60000; // 60 seconds
+
+    function isCoolingDown() {
+        const until = localStorage.getItem(COOLDOWN_KEY);
+        return until && Date.now() < parseInt(until);
+    }
 
     if (feedbackForm) {
         feedbackForm.addEventListener('submit', async (e) => {
             e.preventDefault();
+
+            // Client-side cooldown
+            if (isCoolingDown()) {
+                document.getElementById('modal-feedback').classList.remove('active');
+                document.getElementById('modal-feedback-error').classList.add('active');
+                return;
+            }
 
             const submitBtn = feedbackForm.querySelector('button[type="submit"]');
             const originalText = submitBtn.innerHTML;
@@ -687,11 +778,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById('modal-feedback').classList.remove('active');
 
                 if (data.success) {
-                    // Показать успех
+                    // Cooldown после успешной отправки
+                    localStorage.setItem(COOLDOWN_KEY, Date.now() + COOLDOWN_MS);
                     document.getElementById('modal-feedback-success').classList.add('active');
                     feedbackForm.reset();
                 } else {
-                    // Показать ошибку
                     document.getElementById('modal-feedback-error').classList.add('active');
                 }
             } catch (error) {
@@ -709,7 +800,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (retryBtn) {
         retryBtn.addEventListener('click', () => {
             document.getElementById('modal-feedback-error').classList.remove('active');
-            document.getElementById('modal-feedback').classList.add('active');
+            if (!isCoolingDown()) {
+                document.getElementById('modal-feedback').classList.add('active');
+            }
         });
     }
 });
@@ -754,9 +847,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (revealCards.length === 0) return;
 
+    // На мобильных (< lg) анимация не нужна
+    if (window.innerWidth < 1024) return;
+
     const observerOptions = {
         root: null,
-        rootMargin: '0px 0px -50px 0px', // Триггер когда элемент на 50px выше нижней границы экрана
+        rootMargin: '0px 0px -50px 0px',
         threshold: 0.1
     };
 
@@ -764,7 +860,6 @@ document.addEventListener('DOMContentLoaded', () => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 entry.target.classList.add('revealed');
-                // Отключить наблюдение после появления (анимация один раз)
                 revealObserver.unobserve(entry.target);
             }
         });
@@ -772,6 +867,39 @@ document.addEventListener('DOMContentLoaded', () => {
 
     revealCards.forEach(card => {
         revealObserver.observe(card);
+    });
+});
+
+
+// ==========================================
+// POLICY CHECKBOXES VALIDATION
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const bookingForm = document.querySelector('form[action*="/book/"]');
+    if (!bookingForm) return;
+
+    const checkboxes = bookingForm.querySelectorAll('.policy-checkbox');
+    if (checkboxes.length === 0) return;
+
+    const errorMsg = document.getElementById('policies-error');
+
+    bookingForm.addEventListener('submit', (e) => {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        if (!allChecked) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            if (errorMsg) errorMsg.classList.remove('hidden');
+        }
+    });
+
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', () => {
+            const allChecked = Array.from(checkboxes).every(c => c.checked);
+            if (allChecked && errorMsg) {
+                errorMsg.classList.add('hidden');
+            }
+        });
     });
 });
 

@@ -8,6 +8,11 @@ urlpatterns = [
         name='booking_create'
     ),
     path(
+        'checkout/<int:pk>/',
+        views.BookingCheckoutView.as_view(),
+        name='booking_checkout'
+    ),
+    path(
         'mock-payment/<int:pk>/',
         views.BookingMockPaymentView.as_view(),
         name='booking_mock_payment'

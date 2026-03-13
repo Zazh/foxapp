@@ -39,7 +39,22 @@ class Booking(models.Model):
         null=True,
         blank=True,
         related_name='bookings',
-        verbose_name=_('Storage unit')
+        verbose_name=_('Storage unit'),
+        help_text=_('Primary storage unit (for backward compatibility)')
+    )
+    storage_units = models.ManyToManyField(
+        'services.StorageUnit',
+        through='BookingUnit',
+        related_name='bookings_multi',
+        blank=True,
+        verbose_name=_('Storage units'),
+    )
+
+    # Количество машин/юнитов
+    quantity = models.PositiveIntegerField(
+        default=1,
+        verbose_name=_('Quantity'),
+        help_text=_('Number of storage units booked')
     )
 
     # Даты
@@ -64,10 +79,19 @@ class Booking(models.Model):
     )
 
     # Цены (фиксируем на момент покупки)
+    unit_price_aed = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name=_('Unit price (AED)'),
+        help_text=_('Per-unit price at time of booking')
+    )
     price_aed = models.DecimalField(
         max_digits=10,
         decimal_places=2,
-        verbose_name=_('Period price (AED)')
+        verbose_name=_('Period price (AED)'),
+        help_text=_('Total storage cost: unit_price * quantity')
     )
     addons_aed = models.DecimalField(
         max_digits=10,
@@ -150,6 +174,10 @@ class Booking(models.Model):
 
         elif self.status == self.Status.ACTIVE and self.end_date < today:
             self.status = self.Status.COMPLETED
+            # Release all storage units
+            for bu in self.booking_units.select_related('storage_unit').all():
+                bu.storage_unit.is_available = True
+                bu.storage_unit.save(update_fields=['is_available'])
             if self.storage_unit:
                 self.storage_unit.is_available = True
                 self.storage_unit.save(update_fields=['is_available'])
@@ -167,27 +195,47 @@ class Booking(models.Model):
         return 0
 
     def assign_storage_unit(self):
-        """Назначить свободное место с наименьшим номером"""
+        """Назначить свободное место (legacy, для одного юнита)."""
+        return self.assign_storage_units()
+
+    def assign_storage_units(self):
+        """Назначить свободные места по количеству."""
         from services.models import StorageUnit
 
-        unit = StorageUnit.objects.filter(
-            section__service=self.tariff.service,
-            section__location=self.tariff.location,
-            section__is_active=True,
-            is_active=True,
-            is_available=True
-        ).order_by('section__sort_order', 'unit_number').first()
+        units = list(
+            StorageUnit.objects.filter(
+                section__service=self.tariff.service,
+                section__location=self.tariff.location,
+                section__is_active=True,
+                is_active=True,
+                is_available=True
+            ).order_by('section__sort_order', 'unit_number')[:self.quantity]
+        )
 
-        if unit:
+        if len(units) < self.quantity:
+            return False
+
+        for unit in units:
             unit.is_available = False
             unit.save(update_fields=['is_available'])
-            self.storage_unit = unit
-            self.save(update_fields=['storage_unit', 'updated_at'])
-            return True
-        return False
+            BookingUnit.objects.create(booking=self, storage_unit=unit)
+
+        # Primary unit for backward compatibility
+        self.storage_unit = units[0]
+        self.save(update_fields=['storage_unit', 'updated_at'])
+        return True
+
+    @property
+    def is_expired(self):
+        """Проверяет, истёк ли срок оплаты pending бронирования"""
+        return self.status == self.Status.PENDING and self.expires_at < timezone.now()
 
     def mark_as_paid(self, payment_id=''):
         """Отметить бронирование как оплаченное"""
+        if self.is_expired:
+            self.cancel()
+            return False
+
         self.status = self.Status.PAID
         self.paid_at = timezone.now()
         self.stripe_payment_id = payment_id
@@ -196,7 +244,7 @@ class Booking(models.Model):
             self.parent_booking.end_date = self.end_date
             self.parent_booking.save(update_fields=['end_date'])
         else:
-            self.assign_storage_unit()
+            self.assign_storage_units()
 
         self.save()
 
@@ -208,14 +256,47 @@ class Booking(models.Model):
             import logging
             logging.getLogger(__name__).error(f"Notification error: {e}")
 
+        return True
+
     def cancel(self):
-        """Отменить бронь"""
+        """Отменить бронь — освободить все юниты"""
+        # Release all units via BookingUnit
+        for bu in self.booking_units.select_related('storage_unit').all():
+            bu.storage_unit.is_available = True
+            bu.storage_unit.save(update_fields=['is_available'])
+        # Also release primary unit (backward compat for old bookings)
         if self.storage_unit:
             self.storage_unit.is_available = True
             self.storage_unit.save(update_fields=['is_available'])
 
         self.status = self.Status.CANCELLED
         self.save(update_fields=['status', 'updated_at'])
+
+
+class BookingUnit(models.Model):
+    """Through model: Booking <-> StorageUnit (one per car)"""
+
+    booking = models.ForeignKey(
+        Booking,
+        on_delete=models.CASCADE,
+        related_name='booking_units',
+        verbose_name=_('Booking')
+    )
+    storage_unit = models.ForeignKey(
+        'services.StorageUnit',
+        on_delete=models.PROTECT,
+        related_name='booking_unit_entries',
+        verbose_name=_('Storage unit')
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = _('Booking unit')
+        verbose_name_plural = _('Booking units')
+        unique_together = ['booking', 'storage_unit']
+
+    def __str__(self):
+        return f"{self.booking} — {self.storage_unit}"
 
 
 class BookingAddon(models.Model):

@@ -3,6 +3,8 @@ from io import BytesIO
 from PIL import Image as PILImage
 from django.core.files.base import ContentFile
 
+from decimal import Decimal
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils.text import slugify
@@ -22,6 +24,16 @@ class Service(models.Model):
     )
     name = models.CharField(max_length=255, verbose_name=_('Name'))
     description = models.TextField(blank=True, verbose_name=_('Description'))
+    quantity_label = models.CharField(
+        max_length=255, blank=True, default='',
+        verbose_name=_('Quantity label'),
+        help_text=_('Label for the quantity selector, e.g. "Number of cars" or "Number of units"')
+    )
+    addons_label = models.CharField(
+        max_length=255, blank=True, default='',
+        verbose_name=_('Addons label'),
+        help_text=_('Label for additional services section, e.g. "Additional services"')
+    )
     is_active = models.BooleanField(default=True, verbose_name=_('Active'))
     sort_order = models.PositiveIntegerField(default=0, verbose_name=_('Sort order'))
 
@@ -243,27 +255,6 @@ class TariffPeriod(models.Model):
         help_text=_('Number of days or months')
     )
 
-    # Цены (AED основная)
-    price_aed = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('Price (AED)'))
-    price_usd = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_('Price (USD)'))
-
-    # Старые цены для отображения скидки
-    original_price_aed = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        null=True, blank=True,
-        verbose_name=_('Original price (AED)')
-    )
-    original_price_usd = models.DecimalField(
-        max_digits=10, decimal_places=2,
-        null=True, blank=True,
-        verbose_name=_('Original price (USD)')
-    )
-    discount_label = models.CharField(
-        max_length=100, blank=True,
-        verbose_name=_('Discount label'),
-        help_text=_('e.g., "Save 20%"')
-    )
-
     is_custom = models.BooleanField(default=False, verbose_name=_('Custom period'))
     is_active = models.BooleanField(default=True, verbose_name=_('Active'))
 
@@ -281,7 +272,7 @@ class TariffPeriod(models.Model):
         verbose_name_plural = _('Tariff periods')
 
     def __str__(self):
-        return f"{self.name} — {self.price_aed} AED"
+        return f"{self.name} — {self.base_price} AED"
 
     def calculate_end_date(self, start_date):
         """Рассчитать дату окончания"""
@@ -302,13 +293,111 @@ class TariffPeriod(models.Model):
             return f"{self.duration_value} {'month' if self.duration_value == 1 else 'months'}"
 
     @property
+    def base_price(self):
+        """Цена за 1 юнит (из первого тира)."""
+        tier = self.price_tiers.first()
+        if tier:
+            return tier.price_per_unit_aed
+        return Decimal('0')
+
+    @property
     def has_discount(self):
-        return self.original_price_aed is not None and self.original_price_aed > self.price_aed
+        """Есть ли скидка в базовом тире."""
+        tier = self.price_tiers.first()
+        if tier:
+            return tier.has_discount
+        return False
+
+    @property
+    def discount_percent(self):
+        """Процент скидки из базового тира."""
+        tier = self.price_tiers.first()
+        if tier:
+            return tier.discount_percent
+        return 0
+
+    @property
+    def original_price(self):
+        """Оригинальная цена из базового тира (для отображения)."""
+        tier = self.price_tiers.first()
+        if tier and tier.original_price_per_unit_aed:
+            return tier.original_price_per_unit_aed
+        return None
+
+    def get_unit_price(self, quantity=1):
+        """
+        Per-unit price for the given quantity.
+        Searches tiers where min_units <= quantity and (max_units >= quantity OR max_units is NULL).
+        """
+        tier = self.price_tiers.filter(
+            min_units__lte=quantity
+        ).filter(
+            models.Q(max_units__gte=quantity) | models.Q(max_units__isnull=True)
+        ).order_by('-min_units').first()
+
+        if tier:
+            return tier.price_per_unit_aed
+        return self.base_price
+
+    def get_total_price(self, quantity=1):
+        """Total price for N units."""
+        return self.get_unit_price(quantity) * quantity
+
+
+class TariffPriceTier(models.Model):
+    """Tiered per-unit pricing based on quantity"""
+
+    period = models.ForeignKey(
+        TariffPeriod,
+        on_delete=models.CASCADE,
+        related_name='price_tiers',
+        verbose_name=_('Period')
+    )
+    min_units = models.PositiveIntegerField(
+        verbose_name=_('Minimum units'),
+        help_text=_('Minimum number of units for this price tier (inclusive)')
+    )
+    max_units = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        verbose_name=_('Maximum units'),
+        help_text=_('Maximum number of units (inclusive). Leave blank for unlimited.')
+    )
+    price_per_unit_aed = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        verbose_name=_('Price per unit (AED)')
+    )
+    original_price_per_unit_aed = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name=_('Original price per unit (AED)'),
+        help_text=_('For displaying discount. Leave blank if no discount.')
+    )
+
+    class Meta:
+        ordering = ['min_units']
+        verbose_name = _('Price tier')
+        verbose_name_plural = _('Price tiers')
+        unique_together = ['period', 'min_units']
+
+    def __str__(self):
+        max_label = self.max_units if self.max_units is not None else '∞'
+        return f"{self.min_units}-{max_label}: {self.price_per_unit_aed} AED"
+
+    @property
+    def has_discount(self):
+        return (
+            self.original_price_per_unit_aed is not None
+            and self.original_price_per_unit_aed > self.price_per_unit_aed
+        )
 
     @property
     def discount_percent(self):
         if self.has_discount:
-            return int(100 - (self.price_aed / self.original_price_aed * 100))
+            return int(100 - (self.price_per_unit_aed / self.original_price_per_unit_aed * 100))
         return 0
 
 

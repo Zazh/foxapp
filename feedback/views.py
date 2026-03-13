@@ -1,3 +1,4 @@
+from django.core.cache import cache
 from django.http import JsonResponse
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
@@ -5,11 +6,42 @@ from django.utils.decorators import method_decorator
 
 from .models import FeedbackRequest
 
+# Rate limit: max 3 submissions per IP per 10 minutes
+RATE_LIMIT_MAX = 3
+RATE_LIMIT_WINDOW = 600  # seconds
+
 
 class FeedbackSubmitView(View):
     """Отправка заявки на обратную связь"""
 
+    def _get_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            return x_forwarded_for.split(',')[0].strip()
+        return request.META.get('REMOTE_ADDR')
+
+    def _is_rate_limited(self, ip):
+        cache_key = f'feedback_rate_{ip}'
+        count = cache.get(cache_key, 0)
+        if count >= RATE_LIMIT_MAX:
+            return True
+        cache.set(cache_key, count + 1, RATE_LIMIT_WINDOW)
+        return False
+
     def post(self, request):
+        ip_address = self._get_ip(request)
+
+        # Honeypot — скрытое поле, боты его заполняют
+        if request.POST.get('website', ''):
+            return JsonResponse({'success': True, 'message': 'Thank you!'})
+
+        # Rate limiting по IP
+        if self._is_rate_limited(ip_address):
+            return JsonResponse({
+                'success': False,
+                'error': 'Too many requests. Please try again later.'
+            }, status=429)
+
         name = request.POST.get('name', '').strip()
         phone = request.POST.get('phone', '').strip()
         email = request.POST.get('email', '').strip()
@@ -22,12 +54,17 @@ class FeedbackSubmitView(View):
                 'error': 'Name and phone are required'
             }, status=400)
 
-        # Получить метаданные
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip_address = x_forwarded_for.split(',')[0]
-        else:
-            ip_address = request.META.get('REMOTE_ADDR')
+        # Дубликат — тот же IP + телефон за последние 5 минут
+        from django.utils import timezone
+        from datetime import timedelta
+        recent_cutoff = timezone.now() - timedelta(minutes=5)
+        if FeedbackRequest.objects.filter(
+            ip_address=ip_address, phone=phone, created_at__gte=recent_cutoff
+        ).exists():
+            return JsonResponse({
+                'success': False,
+                'error': 'You have already submitted a request. Please wait.'
+            }, status=429)
 
         # Создать заявку
         feedback = FeedbackRequest.objects.create(

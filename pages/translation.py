@@ -86,3 +86,13 @@ class FeedbackCTATranslationOptions(TranslationOptions):
 
 
 translator.register(FeedbackCTA, FeedbackCTATranslationOptions)
+
+
+from .models import NavLink
+
+
+class NavLinkTranslationOptions(TranslationOptions):
+    fields = ('title',)
+
+
+translator.register(NavLink, NavLinkTranslationOptions)

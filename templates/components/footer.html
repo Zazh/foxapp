@@ -4,7 +4,7 @@
 
 <footer class="footer {{ footer_class }}">
   <section class="flex items-center justify-center w-full [ py-16 ]">
-    <div class="flex flex-wrap gap-8">
+    <div class="flex flex-col items-center gap-8 w-full">
       <div class="w-full flex items-center justify-center">
         <svg class="h-[2rem] text-orange-500" viewBox="0 0 132 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path fill-rule="evenodd" clip-rule="evenodd" d="M0.282935 23.9889C0.130585 23.9889 0 23.8632 0 23.7005V0.306935C0 0.151619 0.123331 0.0184908 0.282935 0.0184908H18.4125C18.5649 0.0184908 18.6955 0.144223 18.6955 0.306935V5.06256C18.6955 5.13652 18.6664 5.21048 18.6157 5.26225C18.5649 5.31402 18.4923 5.34361 18.4198 5.34361H5.50635C5.4338 5.34361 5.36125 5.37319 5.31047 5.42496C5.25969 5.47673 5.23067 5.55069 5.23067 5.62465V10.3877C5.23067 10.4616 5.25969 10.5356 5.31047 10.5874C5.36125 10.6391 5.4338 10.6687 5.50635 10.6687H18.4125C18.4851 10.6687 18.5576 10.6983 18.6084 10.7501C18.6592 10.8018 18.6882 10.8758 18.6882 10.9498V15.7054C18.6882 15.7794 18.6592 15.8533 18.6084 15.9051C18.5576 15.9569 18.4851 15.9864 18.4125 15.9864H5.50635C5.4338 15.9864 5.36125 16.016 5.31047 16.0678C5.25969 16.1196 5.23067 16.1935 5.23067 16.2675V23.6709C5.23067 23.8262 5.10734 23.9593 4.94773 23.9593H0.282935V23.9889Z" fill="currentColor"/>
@@ -17,28 +17,36 @@
       </div>
       <div class="w-full">
         <ul class="flex items-center justify-center gap-8">
-          <li class="btn-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}">
-            <a href="{% url 'home' %}">{% trans 'Home' %}</a>
+          {% for link in nav_links %}
+          <li class="btn-link {% if request.path == link.get_url %}active{% endif %}">
+            <a href="{{ link.get_url }}" {% if link.open_in_new_tab %}target="_blank" rel="noopener noreferrer"{% endif %}>{{ link.title }}</a>
           </li>
-          <li class="btn-link {% if request.resolver_match.url_name == 'about' %}active{% endif %}">
-            <a href="{% url 'about' %}">{% trans 'About' %}</a>
-          </li>
-          <li class="btn-link {% if request.resolver_match.url_name == 'tariff_detail' %}active{% endif %}">
-            <a href="{% url 'tariff_detail' 'auto' 'standard' %}">{% trans 'Parking' %}</a>
-          </li>
-          <li class="btn-link {% if request.resolver_match.url_name == 'contacts' %}active{% endif %}">
-            <a href="{% url 'contacts' %}">{% trans 'Contacts' %}</a>
-          </li>
+          {% endfor %}
         </ul>
       </div>
+      {% if social_links %}
+      <div class="w-full">
+        <ul class="flex justify-center items-center gap-8">
+          {% for link in social_links %}
+          <li>
+            <a target="_blank" href="{{ link.url }}" rel="noopener noreferrer" aria-label="{{ link.get_platform_display }}" title="{{ link.get_platform_display }}">
+              <span class="text-black hover:text-gray-500 transition-colors">
+                {% include "icons/social/"|add:link.platform|add:".html" %}
+              </span>
+            </a>
+          </li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
     </div>
   </section>
   <section class="flex flex-col-reverse md:flex-row items-center justify-between gap-2 [ border-t-gray-100 border-t-1 py-4 ]">
     <p class="text-xs uppercase tracking-wider text-gray-700 w-full text-center md:text-left">© 2026 FOXBOX - All rights reserved</p>
     <ul class="flex gap-6 justify-between md:justify-end w-full flex-wrap">
-      <li><a href="" class="btn-link text-gray-700 hover:text-orange-500">Privacy</a></li>
-      <li><a href="" class="btn-link text-gray-700 hover:text-orange-500">Terms of purchase</a></li>
-      <li><a href="" class="btn-link text-gray-700 hover:text-orange-500">Cookie</a></li>
+      {% for policy in footer_policies %}
+      <li><a href="{{ policy.get_absolute_url }}" class="btn-link text-gray-700 hover:text-orange-500">{{ policy.title }}</a></li>
+      {% endfor %}
     </ul>
   </section>
 </footer>

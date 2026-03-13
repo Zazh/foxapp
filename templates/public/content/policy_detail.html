@@ -1,0 +1,30 @@
+{% extends 'public/base.html' %}
+{% load i18n %}
+
+{% block title %}{{ policy.title }} — FoxBox{% endblock %}
+{% block header_class %}default{% endblock %}
+
+{% block content %}
+
+<!-- breadcrumb -->
+<section class="grid md:grid-cols-12 grid-full gap-4 pt-[8rem] px-4">
+    <div class="lg:col-start-4 xl:col-start-5 col-span-full">
+        <ul class="flex gap-3 text-gray-700 font-bold text-sm">
+            <li><a href="{% url 'home' %}">{% trans "Home" %}</a></li>
+            <li> / </li>
+            <li class="text-orange-500">{{ policy.title }}</li>
+        </ul>
+    </div>
+</section>
+<!-- breadcrumb -->
+
+<section class="grid md:grid-cols-12 grid-full gap-4 px-4 pt-8 pb-20">
+    <div class="lg:col-start-4 xl:col-start-5 xl:col-span-4 lg:col-span-6 col-span-full">
+        <h1 class="h1 leading-tight mb-8">{{ policy.title }}</h1>
+        <div class="prose prose-gray max-w-none leading-relaxed text-gray-700">
+            {{ policy.content|safe }}
+        </div>
+    </div>
+</section>
+
+{% endblock %}

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import Booking, BookingAddon
+from .models import Booking, BookingAddon, BookingUnit
 
 
 class BookingAddonInline(admin.TabularInline):
@@ -17,25 +17,38 @@ class BookingAddonInline(admin.TabularInline):
         return False
 
 
+class BookingUnitInline(admin.TabularInline):
+    model = BookingUnit
+    extra = 0
+    readonly_fields = ('storage_unit', 'created_at')
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+    def has_delete_permission(self, request, obj=None):
+        return False
+
+
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'user', 'tariff', 'period', 'storage_unit',
-        'status_badge', 'total_aed', 'start_date', 'end_date', 'created_at'
+        'id', 'user', 'tariff', 'period', 'quantity', 'storage_unit',
+        'status_badge', 'unit_price_aed', 'total_aed', 'start_date', 'end_date', 'created_at'
     )
     list_filter = ('status', 'tariff__service', 'tariff__location', 'created_at')
     search_fields = ('user__email', 'user__first_name', 'user__last_name', 'stripe_payment_id')
     ordering = ('-created_at',)
     readonly_fields = (
         'stripe_session_id', 'stripe_payment_id', 'paid_at',
-        'created_at', 'updated_at', 'expires_at', 'total_aed'
+        'created_at', 'updated_at', 'expires_at', 'total_aed',
+        'unit_price_aed',
     )
     autocomplete_fields = ('user', 'tariff', 'period', 'storage_unit')
     date_hierarchy = 'created_at'
 
     fieldsets = (
         (None, {
-            'fields': ('user', 'tariff', 'period', 'storage_unit')
+            'fields': ('user', 'tariff', 'period', 'storage_unit', 'quantity')
         }),
         (_('Dates'), {
             'fields': ('start_date', 'end_date')
@@ -44,7 +57,7 @@ class BookingAdmin(admin.ModelAdmin):
             'fields': ('status',)
         }),
         (_('Pricing'), {
-            'fields': ('price_aed', 'addons_aed', 'deposit_aed', 'total_aed')
+            'fields': ('unit_price_aed', 'price_aed', 'addons_aed', 'deposit_aed', 'total_aed')
         }),
         (_('Stripe'), {
             'fields': ('stripe_session_id', 'stripe_payment_id', 'paid_at'),
@@ -56,7 +69,7 @@ class BookingAdmin(admin.ModelAdmin):
         }),
     )
 
-    inlines = [BookingAddonInline]
+    inlines = [BookingUnitInline, BookingAddonInline]
 
     def status_badge(self, obj):
         colors = {

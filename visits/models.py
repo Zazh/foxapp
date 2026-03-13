@@ -18,6 +18,15 @@ class AccessToken(models.Model):
         related_name='access_tokens',
         verbose_name=_('Booking')
     )
+    storage_unit = models.ForeignKey(
+        'services.StorageUnit',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='access_tokens',
+        verbose_name=_('Storage unit'),
+        help_text=_('Specific unit this token grants access to')
+    )
     token = models.CharField(
         max_length=64,
         unique=True,
@@ -48,7 +57,8 @@ class AccessToken(models.Model):
         verbose_name_plural = _('Access tokens')
 
     def __str__(self):
-        return f"{self.token_type} — {self.booking.storage_unit}"
+        unit = self.storage_unit or self.booking.storage_unit
+        return f"{self.token_type} — {unit}"
 
     def save(self, *args, **kwargs):
         if not self.token:
@@ -136,4 +146,6 @@ class Visit(models.Model):
 
     @property
     def storage_unit(self):
+        if self.access_token and self.access_token.storage_unit:
+            return self.access_token.storage_unit
         return self.booking.storage_unit

@@ -42,6 +42,9 @@ urlpatterns += i18n_patterns(
     # Visits
     path('visit/', include('visits.urls')),
 
+    # Policies
+    path('policy/', include('policies.urls')),
+
     # Feedback
     path('feedback/', include('feedback.urls')),
 

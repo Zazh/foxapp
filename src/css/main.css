@@ -329,38 +329,39 @@
    SCROLL REVEAL ANIMATIONS
    ========================================== */
 
-.reveal-card {
-    opacity: 0;
-    transform: translateY(40px);
-    transition: opacity 0.6s ease-out, transform 0.6s ease-out;
-}
+/* На мобильных карточки видны сразу без анимации */
+@media (min-width: 1024px) {
+    .reveal-card {
+        opacity: 0;
+        transform: translateY(40px);
+        transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+    }
 
-.reveal-card.revealed {
-    opacity: 1;
-    transform: translateY(0);
-}
+    .reveal-card.revealed {
+        opacity: 1;
+        transform: translateY(0);
+    }
 
-/* Стрелки тоже скрыты изначально */
-.reveal-card .reveal-arrow {
-    opacity: 0;
-    transition: opacity 0.4s ease-out 0.3s; /* Появляется после карточки */
-}
+    .reveal-card .reveal-arrow {
+        opacity: 0;
+        transition: opacity 0.4s ease-out 0.3s;
+    }
 
-.reveal-card.revealed .reveal-arrow {
-    opacity: 1;
-}
+    .reveal-card.revealed .reveal-arrow {
+        opacity: 1;
+    }
 
-/* Задержки для каждой карточки */
-.reveal-card[data-delay="1"] {
-    transition-delay: 0.1s;
-}
+    .reveal-card[data-delay="1"] {
+        transition-delay: 0.1s;
+    }
 
-.reveal-card[data-delay="2"] {
-    transition-delay: 0.3s;
-}
+    .reveal-card[data-delay="2"] {
+        transition-delay: 0.3s;
+    }
 
-.reveal-card[data-delay="3"] {
-    transition-delay: 0.5s;
+    .reveal-card[data-delay="3"] {
+        transition-delay: 0.5s;
+    }
 }
 
 

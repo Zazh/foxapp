@@ -143,6 +143,27 @@
             <!-- tabs Location -->
         </div>
 
+        <!-- Number of cars -->
+        <div class="flex flex-col gap-4 pb-6 border-b-1 border-gray-200">
+            <div>
+                <h2 class="h4 text-gray-700 font-medium">{{ service.quantity_label }}</h2>
+            </div>
+            <div class="flex items-center gap-3">
+                <button type="button" id="qty-minus" class="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-400 transition-colors" aria-label="{% translate 'Decrease' %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" d="M5 12h14"/>
+                    </svg>
+                </button>
+                <input type="number" name="quantity" id="quantity-input" value="1" min="1" readonly tabindex="-1"
+                    class="w-[3.25rem] h-10 text-center text-lg font-bold text-black border border-gray-200 rounded-lg bg-transparent focus:outline-none focus:ring-0 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none p-0 m-0">
+                <button type="button" id="qty-plus" class="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center text-gray-600 hover:border-gray-400 transition-colors" aria-label="{% translate 'Increase' %}">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" d="M12 5v14M5 12h14"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
         <div class="flex flex-col gap-4">
             <div>
                 <h2 class="h4 text-gray-700 font-medium">{% translate 'Select durations' %}</h2>
@@ -151,11 +172,8 @@
                 {% for period in periods %}
                 <label class="pricing-card">
                     <input type="radio" name="period" value="{{ period.id }}" class="sr-only peer"
-                        data-price="{{ period.price_aed }}"
-                        {% if period.has_discount %}
-                            data-discount="{{ period.discount_percent }}"
-                            data-original="{{ period.original_price_aed }}"
-                        {% endif %}
+                        data-price="{{ period.base_price }}"
+                        data-tiers='[{% for tier in period.price_tiers.all %}{"min":{{ tier.min_units }},"max":{{ tier.max_units|default:"null" }},"price":{{ tier.price_per_unit_aed }}{% if tier.original_price_per_unit_aed %},"original":{{ tier.original_price_per_unit_aed }}{% endif %}}{% if not forloop.last %},{% endif %}{% endfor %}]'
                         {% if period.is_recommended %}checked{% endif %} >
 
                     <span class="pricing-card-inner peer-checked:border-green-500 peer-checked:border-1">
@@ -169,10 +187,8 @@
                             <span class="text-gray-600 text-sm mt-1">{{ period.description }}</span>
                         </span>
                         <span class="pricing-card-price">
-                            <span class="text-sm font-bold text-black">AED {{ period.price_aed|floatformat:0 }}</span>
-                            {% if period.has_discount %}
-                                <span class="text-sm font-bold text-orange-500">/ {{ period.discount_percent }}% off</span>
-                            {% endif %}
+                            <span class="text-sm font-bold text-black period-price">AED {{ period.base_price|floatformat:0 }}</span>
+                            <span class="text-sm font-bold text-orange-500 period-discount hidden"></span>
                         </span>
                     </span>
                 </label>
@@ -180,9 +196,10 @@
             </div>
         </div>
 
+        {% if addons %}
         <div class="flex flex-col gap-4">
             <div>
-                <h2 class="h4 text-gray-700 font-medium">{% translate 'Additional services' %}</h2>
+                <h2 class="h4 text-gray-700 font-medium">{{ service.addons_label }}</h2>
             </div>
             <div class="flex flex-col gap-3">
                 {% for addon in addons %}
@@ -215,6 +232,26 @@
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
+
+        <!-- Policies -->
+        {% if required_policies %}
+        <div class="flex flex-col gap-3" id="policies-section">
+            {% for policy in required_policies %}
+            <label class="flex items-start gap-3 cursor-pointer">
+                <input type="checkbox" name="accepted_policies" value="{{ policy.id }}"
+                       class="policy-checkbox mt-0.5 w-4 h-4 rounded border-gray-300 text-orange-500 focus:ring-orange-500 accent-orange-500">
+                <span class="text-sm text-gray-700">
+                    {{ policy.get_consent_html|safe }}
+                </span>
+            </label>
+            {% endfor %}
+            <p class="text-xs text-red-500 font-bold hidden" id="policies-error">
+                {% trans "You must accept all required policies to continue." %}
+            </p>
+        </div>
+        {% endif %}
+        <!-- Policies -->
 
         <!-- Итого -->
         <div class="flex justify-between gap-4 flex-wrap py-4 border-t-1 border-gray-200">

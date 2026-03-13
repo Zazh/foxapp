@@ -11,7 +11,7 @@ from .models import (
 
 
 class ServiceTranslationOptions(TranslationOptions):
-    fields = ('name', 'description')
+    fields = ('name', 'description', 'quantity_label', 'addons_label')
 
 
 class TariffTranslationOptions(TranslationOptions):
@@ -23,7 +23,7 @@ class TariffSizeTranslationOptions(TranslationOptions):
 
 
 class TariffPeriodTranslationOptions(TranslationOptions):
-    fields = ('name', 'description', 'discount_label')
+    fields = ('name', 'description')
 
 
 class TariffBenefitTranslationOptions(TranslationOptions):

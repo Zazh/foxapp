@@ -161,11 +161,9 @@
         </div>
     </div>
     <ul class="px-6 lg:px-8 py-6">
-        <li><a href="{% url 'home' %}" class="uppercase block btn-link tracking-wider">{% trans 'Home' %}</a></li>
-        <li><a href="{% url 'about' %}" class="uppercase block btn-link tracking-wider">{% trans 'About' %}</a></li>
-<!--        <li><a href="{% url 'service_detail' 'storage' %}" class="uppercase block btn-link tracking-wider">{% trans 'Storage' %}</a></li>-->
-        <li><a href="{% url 'tariff_detail' 'auto' 'standard' %}" class="uppercase block btn-link tracking-wider">{% trans 'Parking' %}</a></li>
-        <li><a href="{% url 'contacts' %}" class="uppercase block btn-link tracking-wider">{% trans 'Contacts' %}</a></li>
+        {% for link in nav_links %}
+        <li><a href="{{ link.get_url }}" class="uppercase block btn-link tracking-wider {% if request.path == link.get_url %}text-orange-500{% endif %}" {% if link.open_in_new_tab %}target="_blank" rel="noopener noreferrer"{% endif %}>{{ link.title }}</a></li>
+        {% endfor %}
     </ul>
     <div class="absolute bottom-0 w-full">
         <div class="px-6 py-3">

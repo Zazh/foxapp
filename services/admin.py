@@ -8,6 +8,7 @@ from .models import (
     Tariff,
     TariffSize,
     TariffPeriod,
+    TariffPriceTier,
     TariffBenefit,
     TariffImage,
     AddonService,
@@ -29,9 +30,7 @@ class TariffPeriodInline(TranslationTabularInline):
     extra = 0
     fields = (
         'name', 'duration_type', 'duration_value',
-        'price_aed', 'price_usd',
-        'original_price_aed', 'original_price_usd',
-        'discount_label', 'is_recommended', 'is_custom', 'is_active', 'sort_order'
+        'is_recommended', 'is_custom', 'is_active', 'sort_order'
     )
 
 
@@ -79,7 +78,7 @@ class ServiceAdmin(TabbedTranslationAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('service_type', 'name', 'description')
+            'fields': ('service_type', 'name', 'description', 'quantity_label', 'addons_label')
         }),
         (_('Settings'), {
             'fields': ('is_active', 'sort_order')
@@ -117,9 +116,15 @@ class TariffAdmin(TabbedTranslationAdmin):
     inlines = [TariffSizeInline, TariffPeriodInline, TariffBenefitInline, TariffImageInline]
 
 
+class TariffPriceTierInline(admin.TabularInline):
+    model = TariffPriceTier
+    extra = 1
+    fields = ('min_units', 'max_units', 'price_per_unit_aed', 'original_price_per_unit_aed')
+
+
 @admin.register(TariffPeriod)
 class TariffPeriodAdmin(TabbedTranslationAdmin):
-    list_display = ('name', 'tariff', 'duration_type', 'duration_value', 'price_aed', 'price_usd', 'is_recommended',
+    list_display = ('name', 'tariff', 'duration_type', 'duration_value', 'base_price', 'is_recommended',
                     'is_custom', 'is_active')
     list_filter = ('tariff__service', 'duration_type', 'is_recommended', 'is_custom', 'is_active')
     list_editable = ('is_recommended', 'is_active',)
@@ -134,17 +139,12 @@ class TariffPeriodAdmin(TabbedTranslationAdmin):
         (_('Duration'), {
             'fields': (('duration_type', 'duration_value'),)
         }),
-        (_('Pricing'), {
-            'fields': (
-                ('price_aed', 'price_usd'),
-                ('original_price_aed', 'original_price_usd'),
-                'discount_label'
-            )
-        }),
         (_('Settings'), {
             'fields': ('is_recommended', 'is_custom', 'is_active', 'sort_order')
         }),
     )
+
+    inlines = [TariffPriceTierInline]
 
 @admin.register(AddonService)
 class AddonServiceAdmin(TabbedTranslationAdmin):

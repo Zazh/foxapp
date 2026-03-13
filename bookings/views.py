@@ -35,6 +35,12 @@ class BookingCreateView(LoginRequiredMixin, View):
         period_id = request.POST.get('period')
         addon_ids = request.POST.getlist('addons')
 
+        # Количество машин
+        try:
+            quantity = max(1, int(request.POST.get('quantity', 1)))
+        except (ValueError, TypeError):
+            quantity = 1
+
         # Валидация — period обязателен
         if not period_id:
             from django.contrib import messages
@@ -44,15 +50,32 @@ class BookingCreateView(LoginRequiredMixin, View):
         # Валидация периода
         period = get_object_or_404(TariffPeriod, id=period_id, tariff=tariff, is_active=True)
 
-        # Проверить доступность мест
-        if tariff.available_units == 0:
+        # Валидация обязательных политик (только ещё не принятые)
+        from policies.models import Policy, PolicyConsent
+        required_policies = Policy.objects.filter(is_active=True, is_required=True)
+        already_accepted_ids = set(
+            PolicyConsent.objects.filter(user=request.user)
+            .values_list('policy_id', flat=True)
+        )
+        unaccepted_policies = required_policies.exclude(id__in=already_accepted_ids)
+        if unaccepted_policies.exists():
+            accepted_ids = set(request.POST.getlist('accepted_policies'))
+            required_ids = set(str(p.id) for p in unaccepted_policies)
+            if not required_ids.issubset(accepted_ids):
+                from django.contrib import messages
+                messages.error(request, 'You must accept all required policies.')
+                return redirect('tariff_detail', service_type=service_type, slug=slug)
+
+        # Проверить доступность мест (для N машин)
+        if tariff.available_units < quantity:
             return render(request, 'bookings/no_availability.html', {
                 'tariff': tariff,
                 'service': service,
             })
 
-        # Рассчитать цены
-        price_aed = period.price_aed
+        # Рассчитать цены с учётом тиров
+        unit_price_aed = period.get_unit_price(quantity)
+        price_aed = unit_price_aed * quantity
         deposit_aed = tariff.deposit_aed
 
         # Аддоны
@@ -66,7 +89,7 @@ class BookingCreateView(LoginRequiredMixin, View):
 
         total_aed = price_aed + addons_aed + deposit_aed
 
-        # Дата начала (если не указана — завтра)
+        # Дата начала
         start_date = timezone.now().date()
 
         # Создать бронирование
@@ -75,11 +98,22 @@ class BookingCreateView(LoginRequiredMixin, View):
             tariff=tariff,
             period=period,
             start_date=start_date,
+            quantity=quantity,
+            unit_price_aed=unit_price_aed,
             price_aed=price_aed,
             addons_aed=addons_aed,
             deposit_aed=deposit_aed,
             total_aed=total_aed,
         )
+
+        # Записать согласие с политиками
+        if unaccepted_policies.exists():
+            for policy in unaccepted_policies:
+                PolicyConsent.objects.update_or_create(
+                    user=request.user,
+                    policy=policy,
+                    defaults={'ip_address': request.META.get('REMOTE_ADDR')}
+                )
 
         # Сохранить аддоны
         for addon in selected_addons:
@@ -104,7 +138,7 @@ class BookingCreateView(LoginRequiredMixin, View):
                         'currency': 'aed',
                         'unit_amount': int(total_aed * 100),
                         'product_data': {
-                            'name': f"{tariff.name} — {period.name}",
+                            'name': f"{tariff.name} — {period.name}" + (f" x{quantity}" if quantity > 1 else ""),
                             'description': f"Deposit: {deposit_aed} AED",
                         },
                     },
@@ -137,18 +171,98 @@ class BookingCreateView(LoginRequiredMixin, View):
             })
 
 
-class BookingMockPaymentView(LoginRequiredMixin, View):
-    """Mock страница оплаты для тестирования"""
+class BookingCheckoutView(LoginRequiredMixin, View):
+    """Повторная оплата pending бронирования через Stripe"""
 
     def get(self, request, pk):
         booking = get_object_or_404(Booking, pk=pk, user=request.user, status=Booking.Status.PENDING)
+
+        # Бронирование истекло
+        if booking.expires_at < timezone.now():
+            booking.cancel()
+            return render(request, 'bookings/cancelled.html', {
+                'booking': booking,
+                'expired': True,
+            })
+
+        # Если Stripe не настроен — mock режим
+        if not is_stripe_configured():
+            return redirect('booking_mock_payment', pk=booking.pk)
+
+        # Создать новую Stripe Checkout Session
+        stripe.api_key = settings.STRIPE_SECRET_KEY
+
+        try:
+            checkout_session = stripe.checkout.Session.create(
+                payment_method_types=['card'],
+                line_items=[{
+                    'price_data': {
+                        'currency': 'aed',
+                        'unit_amount': int(booking.total_aed * 100),
+                        'product_data': {
+                            'name': f"{booking.tariff.name} — {booking.period.name}" + (
+                                f" x{booking.quantity}" if booking.quantity > 1 else ""
+                            ),
+                        },
+                    },
+                    'quantity': 1,
+                }],
+                mode='payment',
+                success_url=request.build_absolute_uri(
+                    reverse('booking_success', args=[booking.pk])
+                ) + '?session_id={CHECKOUT_SESSION_ID}',
+                cancel_url=request.build_absolute_uri(
+                    reverse('booking_cancel', args=[booking.pk])
+                ),
+                client_reference_id=str(booking.pk),
+                customer_email=request.user.email,
+                metadata={'booking_id': booking.pk},
+            )
+
+            booking.stripe_session_id = checkout_session.id
+            booking.save(update_fields=['stripe_session_id'])
+
+            return redirect(checkout_session.url)
+
+        except stripe.error.StripeError as e:
+            booking.cancel()
+            return render(request, 'bookings/error.html', {
+                'error': str(e),
+                'tariff': booking.tariff,
+            })
+
+
+class BookingMockPaymentView(LoginRequiredMixin, View):
+    """Mock страница оплаты — только при выключенном Stripe"""
+
+    def dispatch(self, request, *args, **kwargs):
+        if is_stripe_configured():
+            return redirect('cabinet-dashboard')
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, pk):
+        booking = get_object_or_404(Booking, pk=pk, user=request.user, status=Booking.Status.PENDING)
+
+        if booking.expires_at < timezone.now():
+            booking.cancel()
+            return render(request, 'bookings/cancelled.html', {
+                'booking': booking,
+                'expired': True,
+            })
 
         return render(request, 'bookings/mock_payment.html', {
             'booking': booking,
         })
 
     def post(self, request, pk):
+        if is_stripe_configured():
+            return redirect('cabinet-dashboard')
+
         booking = get_object_or_404(Booking, pk=pk, user=request.user, status=Booking.Status.PENDING)
+
+        if booking.expires_at < timezone.now():
+            booking.cancel()
+            return redirect('booking_cancel', pk=booking.pk)
 
         action = request.POST.get('action')
 

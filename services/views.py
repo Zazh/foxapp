@@ -47,9 +47,19 @@ class TariffDetailView(View):
         # Доп. услуги
         addons = service.addons.filter(is_active=True)
 
+        # Обязательные политики (только ещё не принятые)
+        from policies.models import Policy, PolicyConsent
+        required_policies = Policy.objects.filter(is_active=True, is_required=True)
+        if request.user.is_authenticated:
+            accepted_policy_ids = PolicyConsent.objects.filter(
+                user=request.user
+            ).values_list('policy_id', flat=True)
+            required_policies = required_policies.exclude(id__in=accepted_policy_ids)
+
         return render(request, 'public/content/tariff_detail.html', {
             'service': service,
             'tariff': tariff,
             'periods': periods,
             'addons': addons,
+            'required_policies': required_policies,
         })

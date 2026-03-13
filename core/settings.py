@@ -10,7 +10,9 @@ DEBUG = os.getenv("DEBUG", "False") == "True"
 
 ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
 
-CSRF_TRUSTED_ORIGINS = os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",")
+CSRF_TRUSTED_ORIGINS = [
+    origin for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin
+]
 
 # === SECURITY (HTTPS) ===
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -40,6 +42,7 @@ INSTALLED_APPS = [
     'feedback',
     'backoffice',
     'pages',
+    'policies',
 
 ]
 
@@ -92,8 +95,11 @@ TEMPLATES = [
                 'django.template.context_processors.i18n',
                 'locations.context_processors.locations',
                 'pages.context_processors.feedback_cta',
+                'pages.context_processors.nav_links',
+                'pages.context_processors.social_links',
+                'policies.context_processors.footer_policies',
 
-                'core.context_processors.cache_buster', # убрать на проде
+                'core.context_processors.cache_buster',
             ],
         },
     },
@@ -111,6 +117,17 @@ DATABASES = {
         'PORT': os.getenv("DB_PORT")
     }
 }
+
+import sys
+if 'test' in sys.argv:
+    DATABASES['default'] = {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': ':memory:',
+    }
+    if not SECRET_KEY:
+        SECRET_KEY = 'test-secret-key-not-for-production'
+    DEBUG = True
+    SECURE_SSL_REDIRECT = False
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},

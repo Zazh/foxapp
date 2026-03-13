@@ -46,10 +46,12 @@ class DashboardHomeView(DashboardMixin, TemplateView):
                 seen_units.add(booking.storage_unit_id)
                 active_bookings.append(booking)
 
-        # Pending бронирования (ожидают оплаты)
+        # Pending бронирования (ожидают оплаты, ещё не истекли)
+        now = timezone.now()
         pending_bookings = Booking.objects.filter(
             user=user,
-            status=Booking.Status.PENDING
+            status=Booking.Status.PENDING,
+            expires_at__gt=now,
         ).select_related('tariff', 'period').order_by('-created_at')[:5]
 
         context['active_bookings'] = active_bookings
@@ -102,10 +104,11 @@ class DashboardBillingView(DashboardMixin, TemplateView):
             'tariff', 'tariff__location', 'period', 'storage_unit'
         ).order_by('-paid_at')
 
-        # Pending платежи
+        # Pending платежи (ещё не истекли)
         pending_payments = Booking.objects.filter(
             user=user,
-            status=Booking.Status.PENDING
+            status=Booking.Status.PENDING,
+            expires_at__gt=timezone.now(),
         ).select_related('tariff', 'period').order_by('-created_at')
 
         context['payments'] = payments
@@ -171,8 +174,8 @@ class ExtendBookingView(DashboardMixin, View):
             is_active=True
         )
 
-        # Рассчитать цены
-        price_aed = period.price_aed
+        # Рассчитать цены (продление — всегда 1 юнит)
+        price_aed = period.get_unit_price(1)
         addons_aed = 0
         selected_addons = []
 
@@ -215,13 +218,8 @@ class ExtendBookingView(DashboardMixin, View):
                 price_aed=addon.price_aed
             )
 
-        # Редирект на оплату
-        from bookings.views import is_stripe_configured
-        if not is_stripe_configured():
-            return redirect('booking_mock_payment', pk=extension.pk)
-
-        # TODO: Stripe checkout
-        return redirect('booking_mock_payment', pk=extension.pk)
+        # Редирект на оплату (checkout сам решит: Stripe или mock)
+        return redirect('booking_checkout', pk=extension.pk)
 
 
 class DashboardSettingsView(DashboardMixin, TemplateView):

@@ -9,55 +9,53 @@
 {% endblock %}
 
 {% block content %}
-<section class="grid md:grid-cols-12 gap-x-4 px-4 md:px-4 min-h-[80vh]">
-    <!-- Сайдбар / табы -->
-    <div class="lg:col-span-3 xl:col-span-4 col-span-full lg:border-r border-gray-100 overflow-hidden -mx-4 md:mx-0">
-        <!-- Фиксированная навигация (скрыта по умолчанию) -->
-        <nav id="fixed-nav" class="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-100 -translate-y-full transition-transform duration-300 lg:hidden">
-            <ul class="flex overflow-x-auto gap-4 py-3 px-4 scrollbar-hide">
-                <li class="shrink-0">
-                    <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
-                        {% trans "Dashboard" %}
-                    </a>
-                </li>
-                <li class="shrink-0">
-                    <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
-                        {% trans "History" %}
-                    </a>
-                </li>
-                <li class="shrink-0">
-                    <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
-                        {% trans "Billing" %}
-                    </a>
-                </li>
-                <li class="shrink-0">
-                    <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
-                        {% trans "Settings" %}
-                    </a>
-                </li>
-            </ul>
-        </nav>
+<!-- Мобильная навигация (фиксированная при скролле) -->
+<nav id="fixed-nav" class="fixed top-0 left-0 right-0 bg-white z-50 border-b border-gray-100 -translate-y-full transition-transform duration-300 lg:hidden">
+    <ul class="flex overflow-x-auto gap-4 py-3 px-4 scrollbar-hide">
+        <li class="shrink-0">
+            <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
+                {% trans "Dashboard" %}
+            </a>
+        </li>
+        <li class="shrink-0">
+            <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                {% trans "History" %}
+            </a>
+        </li>
+        <li class="shrink-0">
+            <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                {% trans "Billing" %}
+            </a>
+        </li>
+        <li class="shrink-0">
+            <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 font-bold tracking-wider whitespace-nowrap">
+                {% trans "Settings" %}
+            </a>
+        </li>
+    </ul>
+</nav>
 
-        <nav class="sticky top-0 bg-white z-10 lg:static border-b lg:border-0 border-gray-100">
-            <ul class="flex flex-row overflow-x-auto gap-4 py-3 px-4 md:px-0
-                       lg:flex-col lg:overflow-visible lg:gap-2 lg:pt-6 lg:pr-16 lg:text-right
-                       scrollbar-hide">
-                <li class="shrink-0">
+<section class="grid md:grid-cols-12 gap-x-4 px-4 md:px-4 min-h-[80vh]">
+    <!-- Сайдбар (только десктоп) -->
+    <div class="hidden lg:block lg:col-span-3 xl:col-span-4 lg:border-r border-gray-100 overflow-hidden">
+        <nav class="lg:static">
+            <ul class="flex flex-col gap-2 pt-6 pr-16 text-right">
+                <li>
                     <a href="{% url 'cabinet-dashboard' %}" class="uppercase text-sm text-orange-500 font-bold tracking-wider whitespace-nowrap">
                         {% trans "Dashboard" %}
                     </a>
                 </li>
-                <li class="shrink-0">
+                <li>
                     <a href="{% url 'cabinet-history' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
                         {% trans "History" %}
                     </a>
                 </li>
-                <li class="shrink-0">
+                <li>
                     <a href="{% url 'cabinet-billing' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
                         {% trans "Billing" %}
                     </a>
                 </li>
-                <li class="shrink-0">
+                <li>
                     <a href="{% url 'cabinet-settings' %}" class="uppercase text-sm text-gray-700 hover:text-orange-500 font-bold tracking-wider whitespace-nowrap transition">
                         {% trans "Settings" %}
                     </a>
@@ -141,10 +139,10 @@
             {% for period in periods %}
             <label class="pricing-card">
                 <input type="radio" name="period" value="{{ period.id }}" class="sr-only peer"
-                    data-price="{{ period.price_aed }}"
+                    data-price="{{ period.base_price }}"
                     {% if period.has_discount %}
                         data-discount="{{ period.discount_percent }}"
-                        data-original="{{ period.original_price_aed }}"
+                        data-original="{{ period.original_price }}"
                     {% endif %}
                     {% if period.is_recommended %}checked{% endif %}>
 
@@ -159,7 +157,7 @@
                             <span class="text-gray-600 text-sm mt-1">{{ period.description }}</span>
                         </span>
                         <span class="pricing-card-price">
-                            <span class="text-sm font-bold text-black">AED {{ period.price_aed|floatformat:0 }}</span>
+                            <span class="text-sm font-bold text-black">AED {{ period.base_price|floatformat:0 }}</span>
                             {% if period.has_discount %}
                                 <span class="text-sm font-bold text-orange-500">/ {{ period.discount_percent }}% off</span>
                             {% endif %}
