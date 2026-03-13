@@ -19,14 +19,14 @@
         <div class="flex justify-center w-full">
             <h1 class="h1 text-center">
                 <span class="flex gap-3 justify-center">
-                    {{ page.hero_title_line1 }}
+                    {{ page.hero_title_line1|safe }}
                 </span>
                 <span class="flex gap-2 md:gap-3 justify-center">
-                        <span class="order-1">{{ page.hero_title_line2 }}</span>
+                        <span class="order-1">{{ page.hero_title_line2|safe }}</span>
                         <span class="w-[3.875rem] md:w-[4.875rem] relative order-2">
                             <img class="absolute left-0 -bottom-1" src="{% static 'dist/images/svgs/logo-fox.svg' %}" alt="">
                         </span>
-                        <span class="order-3">{{ page.hero_title_line3 }}</span>
+                        <span class="order-3">{{ page.hero_title_line3|safe }}</span>
                 </span>
             </h1>
         </div>
