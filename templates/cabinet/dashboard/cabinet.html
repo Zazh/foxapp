@@ -8,6 +8,12 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 <script src="{% static 'dist/js/qr.js' %}"></script>
+{% if show_onboarding %}
+<script>
+    // Auto-open onboarding modal
+    document.body.style.overflow = 'hidden';
+</script>
+{% endif %}
 {% endblock %}
 
 {% block content %}
@@ -179,6 +185,92 @@
         </div>
     </div>
 </section>
+
+<!-- Onboarding Modal -->
+{% if show_onboarding %}
+<div class="modal-overlay active" id="modal-onboarding">
+  <div class="modal flex flex-col gap-6">
+    <div class="modal-header px-4 md:px-6">
+      <div class="flex flex-col">
+        <div class="pb-1">
+          <h3 class="h2 text-center">{% trans "Welcome to FoxBox!" %}</h3>
+        </div>
+        <div>
+          <p class="text-center leading-tight font-medium text-gray-700">
+            {% trans "Complete your profile to get started" %}
+          </p>
+        </div>
+      </div>
+      <button type="button" class="modal-close [ absolute right-4 top-4 ] w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+    <div class="modal-body px-4 md:px-6 flex flex-col gap-6">
+
+      <!-- Telegram -->
+      {% if not request.user.telegram_id %}
+      <div class="border-b border-gray-100 pb-4">
+        <div class="flex justify-between items-center">
+          <div>
+            <h4 class="font-bold text-sm text-gray-700">{% trans "Connect Telegram" %}</h4>
+            <p class="text-xs text-gray-500 mt-1">{% trans "Receive booking notifications" %}</p>
+          </div>
+          <button id="btn-connect-telegram" class="btn-card default">{% trans "Connect" %}</button>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Profile fields -->
+      {% if not request.user.id_card or not request.user.phone %}
+      <form method="post" action="{% url 'cabinet-settings' %}" id="onboarding-form">
+        {% csrf_token %}
+        <input type="hidden" name="first_name" value="{{ request.user.first_name }}">
+        <input type="hidden" name="middle_name" value="{{ request.user.middle_name }}">
+        <input type="hidden" name="last_name" value="{{ request.user.last_name }}">
+        <div class="flex flex-col gap-4">
+          {% if not request.user.id_card %}
+          <div class="flex flex-col gap-2">
+            <div class="input-floating">
+              <input type="text" id="onboarding-id-card" name="id_card" value="{{ request.user.id_card }}" placeholder=" " required>
+              <label for="onboarding-id-card">{% trans "ID Card / Emirates ID" %} <span class="text-red-500">*</span></label>
+            </div>
+            <p class="text-xs text-gray-500">{% trans "Required for unit access verification" %}</p>
+          </div>
+          {% else %}
+          <input type="hidden" name="id_card" value="{{ request.user.id_card }}">
+          {% endif %}
+
+          {% if not request.user.phone %}
+          <div class="flex flex-col gap-2">
+            <div class="input-floating">
+              <input type="tel" id="onboarding-phone" name="phone" value="{{ request.user.phone }}" placeholder=" ">
+              <label for="onboarding-phone">{% trans "Phone number" %}</label>
+            </div>
+          </div>
+          {% else %}
+          <input type="hidden" name="phone" value="{{ request.user.phone }}">
+          {% endif %}
+
+          <button type="submit" class="btn-default black lg justify-center w-full flex">
+            {% trans "Save & Continue" %}
+          </button>
+        </div>
+      </form>
+      {% endif %}
+
+    </div>
+    <div class="modal-footer">
+      <div class="flex justify-center px-4 md:px-6 pb-4">
+        <button type="button" class="modal-close text-gray-700 hover:text-gray-900 py-2 font-bold text-center text-sm">
+          {% trans "Skip for now" %}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <!-- Модальное QR Code -->
 <div class="modal-overlay" id="modal-qr-code">

@@ -75,6 +75,7 @@
                     </div>
                     <div class="flex-1 font-bold text-sm">{% trans "Visitor" %}</div>
                     <div class="flex-1 font-bold text-sm hidden md:block">{% trans "Unit" %}</div>
+                    <div class="flex-1 font-bold text-sm hidden md:block">{% trans "Location" %}</div>
                     <div class="w-20 font-bold text-sm hidden md:block">{% trans "Type" %}</div>
                 </div>
 
@@ -86,7 +87,8 @@
                         <div class="flex-1 text-sm hidden md:block">{{ visit.visited_at|time:"H:i" }}</div>
                     </div>
                     <div class="flex-1 text-sm">{{ visit.visitor_name }}</div>
-                    <div class="flex-1 text-sm hidden md:block font-mono">{{ visit.booking.storage_unit.full_code }}</div>
+                    <div class="flex-1 text-sm hidden md:block font-mono">{{ visit.unit_code }}</div>
+                    <div class="flex-1 text-sm hidden md:block">{{ visit.location_name }}</div>
                     <div class="w-20 hidden md:block">
                         {% if visit.visitor_type == 'owner' %}
                         <span class="inline-flex px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">{% trans "Owner" %}</span>

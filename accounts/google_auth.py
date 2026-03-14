@@ -161,8 +161,4 @@ def google_callback(request):
     if next_url and next_url.startswith('/'):
         return redirect(next_url)
 
-    # Если у пользователя не заполнены обязательные поля — на настройки
-    if not user.phone or not user.id_card:
-        return redirect('cabinet-settings')
-
     return redirect('cabinet-dashboard')

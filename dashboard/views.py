@@ -24,39 +24,33 @@ class DashboardHomeView(DashboardMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
-        today = timezone.now().date()
+        now = timezone.now()
 
-        # Получаем все активные бронирования (включая продления)
-        all_active = Booking.objects.filter(
+        # Только основные бронирования (не продления)
+        active_bookings = list(Booking.objects.filter(
             user=user,
             status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
-            end_date__gte=today,
-            storage_unit__isnull=False
+            parent_booking__isnull=True,
+            storage_unit__isnull=False,
         ).select_related(
             'tariff', 'tariff__location', 'tariff__service',
-            'period', 'storage_unit', 'storage_unit__section'
-        ).order_by('-end_date')  # Сначала с большей датой окончания
-
-        # Группируем по storage_unit — показываем только одно бронирование на unit
-        # (с максимальной end_date)
-        seen_units = set()
-        active_bookings = []
-        for booking in all_active:
-            if booking.storage_unit_id not in seen_units:
-                seen_units.add(booking.storage_unit_id)
-                active_bookings.append(booking)
+            'storage_unit', 'storage_unit__section',
+        ).order_by('-end_date'))
 
         # Pending бронирования (ожидают оплаты, ещё не истекли)
-        now = timezone.now()
         pending_bookings = Booking.objects.filter(
             user=user,
             status=Booking.Status.PENDING,
             expires_at__gt=now,
-        ).select_related('tariff', 'period').order_by('-created_at')[:5]
+        ).order_by('-created_at')[:5]
 
         context['active_bookings'] = active_bookings
         context['pending_bookings'] = pending_bookings
         context['has_active'] = len(active_bookings) > 0
+
+        # Onboarding: show modal if profile is incomplete
+        user = self.request.user
+        context['show_onboarding'] = not user.telegram_id or not user.phone or not user.id_card
 
         return context
 
@@ -71,11 +65,9 @@ class DashboardHistoryView(DashboardMixin, TemplateView):
 
         from visits.models import Visit
 
-        # Все посещения пользователя (по его бронированиям)
+        # Все посещения пользователя (снепшот-данные в самой модели)
         visits = Visit.objects.filter(
             booking__user=user
-        ).select_related(
-            'booking', 'booking__storage_unit'
         ).order_by('-visited_at')
 
         context['visits'] = visits
@@ -83,36 +75,26 @@ class DashboardHistoryView(DashboardMixin, TemplateView):
         return context
 
 class DashboardBillingView(DashboardMixin, TemplateView):
-    """Платежи и счета"""
+    """Billing — платежи и ожидающие оплаты"""
     template_name = 'cabinet/dashboard/billing.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         user = self.request.user
+        now = timezone.now()
 
-        # Оплаченные бронирования = платежи (invoices)
-        payments = Booking.objects.filter(
+        # Оплаченные бронирования
+        context['paid_bookings'] = Booking.objects.filter(
             user=user,
-            status__in=[
-                Booking.Status.PAID,
-                Booking.Status.ACTIVE,
-                Booking.Status.EXPIRED,
-                Booking.Status.COMPLETED
-            ],
-            paid_at__isnull=False
-        ).select_related(
-            'tariff', 'tariff__location', 'period', 'storage_unit'
-        ).order_by('-paid_at')
+            paid_at__isnull=False,
+        ).select_related('tariff', 'period').order_by('-paid_at')
 
-        # Pending платежи (ещё не истекли)
-        pending_payments = Booking.objects.filter(
+        # Pending (ожидают оплаты, ещё не истекли)
+        context['pending_payments'] = Booking.objects.filter(
             user=user,
             status=Booking.Status.PENDING,
-            expires_at__gt=timezone.now(),
+            expires_at__gt=now,
         ).select_related('tariff', 'period').order_by('-created_at')
-
-        context['payments'] = payments
-        context['pending_payments'] = pending_payments
 
         return context
 
