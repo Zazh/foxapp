@@ -133,6 +133,26 @@ class Visit(models.Model):
         verbose_name=_('Scanned by')
     )
 
+    # Снепшот — фиксируем на момент визита
+    unit_code = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name=_('Unit code'),
+        help_text=_('Snapshot of storage unit code at time of visit')
+    )
+    location_name = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_('Location'),
+        help_text=_('Snapshot of location name at time of visit')
+    )
+    scanned_by_name = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_('Scanned by (name)'),
+        help_text=_('Snapshot of manager name at time of visit')
+    )
+
     visited_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Visited at'))
     notes = models.TextField(blank=True, verbose_name=_('Notes'))
 
@@ -142,10 +162,20 @@ class Visit(models.Model):
         verbose_name_plural = _('Visits')
 
     def __str__(self):
-        return f"{self.booking.storage_unit} — {self.visited_at.strftime('%Y-%m-%d %H:%M')}"
+        return f"{self.unit_code or '—'} — {self.visited_at.strftime('%Y-%m-%d %H:%M')}"
 
-    @property
-    def storage_unit(self):
-        if self.access_token and self.access_token.storage_unit:
-            return self.access_token.storage_unit
-        return self.booking.storage_unit
+    def save(self, *args, **kwargs):
+        if not self.pk:
+            # Зафиксировать снепшоты при создании
+            if not self.unit_code:
+                unit = None
+                if self.access_token and self.access_token.storage_unit:
+                    unit = self.access_token.storage_unit
+                elif self.booking and self.booking.storage_unit:
+                    unit = self.booking.storage_unit
+                if unit:
+                    self.unit_code = unit.full_code
+                    self.location_name = unit.section.location.name
+            if not self.scanned_by_name and self.scanned_by:
+                self.scanned_by_name = self.scanned_by.get_full_name() or self.scanned_by.email
+        super().save(*args, **kwargs)

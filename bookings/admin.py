@@ -42,6 +42,7 @@ class BookingAdmin(admin.ModelAdmin):
         'stripe_session_id', 'stripe_payment_id', 'paid_at',
         'created_at', 'updated_at', 'expires_at', 'total_aed',
         'unit_price_aed',
+        'tariff_name', 'service_name', 'location_name', 'period_label', 'unit_codes',
     )
     autocomplete_fields = ('user', 'tariff', 'period', 'storage_unit')
     date_hierarchy = 'created_at'
@@ -58,6 +59,13 @@ class BookingAdmin(admin.ModelAdmin):
         }),
         (_('Pricing'), {
             'fields': ('unit_price_aed', 'price_aed', 'addons_aed', 'deposit_aed', 'total_aed')
+        }),
+        (_('Notes'), {
+            'fields': ('manager_notes',),
+        }),
+        (_('Snapshots'), {
+            'fields': ('tariff_name', 'service_name', 'location_name', 'period_label', 'unit_codes'),
+            'classes': ('collapse',),
         }),
         (_('Stripe'), {
             'fields': ('stripe_session_id', 'stripe_payment_id', 'paid_at'),

@@ -16,7 +16,7 @@ class AccessTokenAdmin(admin.ModelAdmin):
 
 @admin.register(Visit)
 class VisitAdmin(admin.ModelAdmin):
-    list_display = ['booking', 'visitor_type', 'visitor_name', 'scanned_by', 'visited_at']
-    list_filter = ['visitor_type', 'visited_at']
-    search_fields = ['booking__user__email', 'visitor_name']
-    readonly_fields = ['visited_at']
+    list_display = ['unit_code', 'location_name', 'visitor_type', 'visitor_name', 'scanned_by_name', 'visited_at']
+    list_filter = ['visitor_type', 'location_name', 'visited_at']
+    search_fields = ['booking__user__email', 'visitor_name', 'unit_code', 'location_name']
+    readonly_fields = ['visited_at', 'unit_code', 'location_name', 'scanned_by_name']
