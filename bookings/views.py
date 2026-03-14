@@ -200,7 +200,7 @@ class BookingCheckoutView(LoginRequiredMixin, View):
                         'currency': 'aed',
                         'unit_amount': int(booking.total_aed * 100),
                         'product_data': {
-                            'name': f"{booking.tariff.name} — {booking.period.name}" + (
+                            'name': f"{booking.tariff_name or booking.tariff.name} — {booking.period_label or booking.period.name}" + (
                                 f" x{booking.quantity}" if booking.quantity > 1 else ""
                             ),
                         },
@@ -289,7 +289,16 @@ class BookingSuccessView(LoginRequiredMixin, View):
                 try:
                     session = stripe.checkout.Session.retrieve(session_id)
                     if session.payment_status == 'paid':
-                        booking.mark_as_paid(session.payment_intent)
+                        receipt_url = ''
+                        if session.payment_intent:
+                            try:
+                                pi = stripe.PaymentIntent.retrieve(session.payment_intent)
+                                if pi.latest_charge:
+                                    charge = stripe.Charge.retrieve(pi.latest_charge)
+                                    receipt_url = charge.receipt_url or ''
+                            except stripe.error.StripeError:
+                                pass
+                        booking.mark_as_paid(session.payment_intent, receipt_url)
                 except stripe.error.StripeError:
                     pass
 
@@ -342,7 +351,20 @@ class StripeWebhookView(View):
                 try:
                     booking = Booking.objects.get(pk=booking_id)
                     if booking.status == Booking.Status.PENDING:
-                        booking.mark_as_paid(session.get('payment_intent', ''))
+                        payment_intent_id = session.get('payment_intent', '')
+                        receipt_url = ''
+
+                        # Достать receipt_url из charge
+                        if payment_intent_id:
+                            try:
+                                pi = stripe.PaymentIntent.retrieve(payment_intent_id)
+                                if pi.latest_charge:
+                                    charge = stripe.Charge.retrieve(pi.latest_charge)
+                                    receipt_url = charge.receipt_url or ''
+                            except stripe.error.StripeError:
+                                pass
+
+                        booking.mark_as_paid(payment_intent_id, receipt_url)
                 except Booking.DoesNotExist:
                     pass
 
