@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.utils import timezone
 
 from bookings.models import Booking
@@ -18,8 +19,12 @@ class Command(BaseCommand):
         )
         activated = 0
         for booking in to_activate:
-            booking.activate()
-            activated += 1
+            try:
+                with transaction.atomic():
+                    booking.activate()
+                activated += 1
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'Error activating #{booking.pk}: {e}'))
 
         # active → expired (end_date passed, units stay occupied!)
         to_expire = Booking.objects.filter(
@@ -28,8 +33,12 @@ class Command(BaseCommand):
         )
         expired = 0
         for booking in to_expire:
-            booking.expire()
-            expired += 1
+            try:
+                with transaction.atomic():
+                    booking.expire()
+                expired += 1
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'Error expiring #{booking.pk}: {e}'))
 
         if activated or expired:
             self.stdout.write(self.style.SUCCESS(

@@ -343,6 +343,13 @@ class StripeWebhookView(View):
         except stripe.error.SignatureVerificationError:
             return HttpResponseBadRequest('Invalid signature')
 
+        # Дедупликация: проверяем event ID через кэш
+        from django.core.cache import cache
+        event_id = event.get('id', '')
+        cache_key = f'stripe_event_{event_id}'
+        if event_id and cache.get(cache_key):
+            return JsonResponse({'status': 'already processed'})
+
         if event['type'] == 'checkout.session.completed':
             session = event['data']['object']
             booking_id = session.get('client_reference_id')
@@ -367,5 +374,9 @@ class StripeWebhookView(View):
                         booking.mark_as_paid(payment_intent_id, receipt_url)
                 except Booking.DoesNotExist:
                     pass
+
+        # Сохранить event ID в кэш на 48 часов
+        if event_id:
+            cache.set(cache_key, True, 48 * 3600)
 
         return JsonResponse({'status': 'ok'})

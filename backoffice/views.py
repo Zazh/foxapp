@@ -125,7 +125,7 @@ class DashboardView(TemplateView):
         # Последние заявки
         context['recent_feedback'] = FeedbackRequest.objects.filter(
             status=FeedbackRequest.Status.NEW
-        ).order_by('-created_at')[:5]
+        ).select_related('user').order_by('-created_at')[:5]
 
         # Expired (unreleased) — требуют внимания менеджера
         context['expired_bookings'] = Booking.objects.filter(
@@ -207,7 +207,7 @@ class BookingListView(ListView):
                 ),
             ).order_by('sort_priority', 'end_date')
 
-        qs = qs.select_related('user')
+        qs = qs.select_related('user', 'tariff', 'tariff__location', 'period', 'storage_unit')
 
         search = self.request.GET.get('search')
         if search:
@@ -267,7 +267,7 @@ class PaymentListView(ListView):
 
     def get_queryset(self):
         qs = Booking.objects.select_related(
-            'user'
+            'user', 'tariff', 'tariff__location', 'period', 'storage_unit'
         ).order_by('-created_at')
 
         # Фильтр по статусу оплаты
@@ -362,7 +362,9 @@ class UserDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['bookings'] = self.object.bookings.order_by('-created_at')[:10]
+        context['bookings'] = self.object.bookings.select_related(
+            'tariff', 'tariff__location', 'period', 'storage_unit'
+        ).order_by('-created_at')[:10]
         return context
 
 
@@ -426,7 +428,7 @@ class VisitListView(ListView):
 
     def get_queryset(self):
         qs = Visit.objects.select_related(
-            'booking__user'
+            'booking__user', 'booking__storage_unit__section__location'
         ).order_by('-visited_at')
 
         date_from, date_to = self._get_date_range()
@@ -734,17 +736,17 @@ class UnitDetailView(DetailView):
         context['current_booking'] = Booking.objects.filter(
             storage_unit=self.object,
             status__in=[Booking.Status.PAID, Booking.Status.ACTIVE]
-        ).select_related('user', 'tariff').first()
+        ).select_related('user', 'tariff', 'tariff__location', 'period').first()
 
         # История бронирований
         context['booking_history'] = Booking.objects.filter(
             storage_unit=self.object
-        ).select_related('user', 'tariff').order_by('-created_at')[:10]
+        ).select_related('user', 'tariff', 'tariff__location', 'period').order_by('-created_at')[:10]
 
         # История посещений
         context['recent_visits'] = Visit.objects.filter(
             booking__storage_unit=self.object
-        ).select_related('booking__user').order_by('-visited_at')[:10]
+        ).select_related('booking__user', 'booking__storage_unit__section__location').order_by('-visited_at')[:10]
 
         return context
 

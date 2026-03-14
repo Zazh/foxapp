@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from datetime import timedelta
@@ -250,12 +250,17 @@ class Booking(models.Model):
             return (today - self.end_date).days
         return 0
 
+    @transaction.atomic
     def assign_storage_units(self):
-        """Назначить свободные места по количеству."""
+        """Назначить свободные места по количеству.
+
+        Использует select_for_update для предотвращения race condition
+        при одновременном бронировании.
+        """
         from services.models import StorageUnit
 
         units = list(
-            StorageUnit.objects.filter(
+            StorageUnit.objects.select_for_update().filter(
                 section__service=self.tariff.service,
                 section__location=self.tariff.location,
                 section__is_active=True,
@@ -283,38 +288,52 @@ class Booking(models.Model):
         """Проверяет, истёк ли срок оплаты pending бронирования"""
         return self.status == self.Status.PENDING and self.expires_at < timezone.now()
 
+    @transaction.atomic
     def mark_as_paid(self, payment_id='', receipt_url=''):
         """Отметить бронирование как оплаченное.
 
         Основное бронирование: назначает юниты, статус → paid.
         Продление: обновляет end_date родителя, статус продления → completed.
+
+        Обёрнуто в transaction.atomic — при ошибке откатится вся операция.
         """
-        if self.is_expired:
-            self.cancel()
+        # Перечитать бронирование с блокировкой
+        booking = Booking.objects.select_for_update().get(pk=self.pk)
+
+        if booking.status != self.Status.PENDING:
             return False
 
-        self.paid_at = timezone.now()
-        self.stripe_payment_id = payment_id
+        if booking.is_expired:
+            booking.cancel()
+            return False
+
+        booking.paid_at = timezone.now()
+        booking.stripe_payment_id = payment_id
         if receipt_url:
-            self.stripe_receipt_url = receipt_url
+            booking.stripe_receipt_url = receipt_url
 
-        if self.is_extension:
-            # Продление: обновить родителя, себя пометить completed
-            parent = self.parent_booking
-            parent.end_date = self.end_date
+        if booking.is_extension:
+            parent = Booking.objects.select_for_update().get(pk=booking.parent_booking_id)
+            parent.end_date = booking.end_date
             parent.save(update_fields=['end_date', 'updated_at'])
-            self.status = self.Status.COMPLETED
+            booking.status = self.Status.COMPLETED
         else:
-            # Новое бронирование: назначить юниты
-            self.status = self.Status.PAID
-            self.assign_storage_units()
+            booking.status = self.Status.PAID
+            booking.assign_storage_units()
 
-        self.save()
+        booking.save()
 
-        # Отправить уведомление
+        # Обновить self чтобы вызывающий код видел новые значения
+        self.status = booking.status
+        self.paid_at = booking.paid_at
+        self.stripe_payment_id = booking.stripe_payment_id
+        self.storage_unit = booking.storage_unit
+        self.unit_codes = booking.unit_codes
+
+        # Уведомление вне транзакции — не должно откатывать платёж
         try:
             from notifications.services import notify_booking_paid
-            notify_booking_paid(self)
+            notify_booking_paid(booking)
         except Exception as e:
             import logging
             logging.getLogger(__name__).error(f"Notification error: {e}")

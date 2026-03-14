@@ -1,4 +1,5 @@
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.utils import timezone
 
 from bookings.models import Booking
@@ -31,13 +32,17 @@ class Command(BaseCommand):
 
         if dry_run:
             self.stdout.write(f'[DRY RUN] Would cancel {count} expired pending booking(s):')
-            for b in expired_pending:
-                self.stdout.write(f'  #{b.pk} — {b.user.email} — {b.tariff.name} (expired {b.expires_at})')
+            for b in expired_pending.select_related('user', 'tariff'):
+                self.stdout.write(f'  #{b.pk} — {b.user.email} — {b.tariff_name or b.tariff.name} (expired {b.expires_at})')
             return
 
         cancelled = 0
         for booking in expired_pending:
-            booking.cancel()
-            cancelled += 1
+            try:
+                with transaction.atomic():
+                    booking.cancel()
+                cancelled += 1
+            except Exception as e:
+                self.stdout.write(self.style.ERROR(f'Error cancelling #{booking.pk}: {e}'))
 
         self.stdout.write(self.style.SUCCESS(f'Cancelled {cancelled} expired pending booking(s).'))

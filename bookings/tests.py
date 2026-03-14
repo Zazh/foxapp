@@ -205,20 +205,18 @@ class BookingUnitTest(BookingTestMixin, TestCase):
         self.assertEqual(booking.booking_units.count(), 2)
         self.assertIsNotNone(booking.storage_unit)
 
-    def test_completed_releases_all_units(self):
-        """When booking completes, all units become available."""
+    def test_complete_releases_all_units(self):
+        """When booking completes via complete(), all units become available."""
         booking = self.create_booking(quantity=2)
         booking.assign_storage_units()
-        # Simulate expiry
         booking.status = Booking.Status.ACTIVE
-        booking.end_date = timezone.now().date() - timezone.timedelta(days=1)
-        booking.save()
-        # Trigger actual_status check
-        _ = booking.actual_status
+        booking.save(update_fields=['status'])
+        booking.complete()
         for bu in booking.booking_units.all():
             self.assertTrue(
                 StorageUnit.objects.get(pk=bu.storage_unit_id).is_available
             )
+        self.assertEqual(booking.status, Booking.Status.COMPLETED)
 
 
 class BookingWithTieredPricingTest(BookingTestMixin, TestCase):
@@ -515,12 +513,12 @@ class BookingExpirationTest(BookingTestMixin, TestCase):
         booking.save(update_fields=['expires_at'])
         self.assertTrue(booking.is_expired)
 
-    def test_actual_status_cancels_expired_pending(self):
+    def test_cancel_expired_pending(self):
         booking = self.create_booking()
         booking.expires_at = timezone.now() - timedelta(minutes=1)
         booking.save(update_fields=['expires_at'])
-        status = booking.actual_status
-        self.assertEqual(status, Booking.Status.CANCELLED)
+        self.assertTrue(booking.is_expired)
+        booking.cancel()
         booking.refresh_from_db()
         self.assertEqual(booking.status, Booking.Status.CANCELLED)
 
@@ -735,6 +733,200 @@ class CancelExpiredBookingsCommandTest(BookingTestMixin, TestCase):
         booking.refresh_from_db()
 
         call_command('cancel_expired_bookings')
+
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PAID)
+
+
+class MarkAsPaidAtomicityTest(BookingTestMixin, TestCase):
+    """Tests for atomic mark_as_paid and double-payment prevention."""
+
+    def setUp(self):
+        self.create_base_objects()
+
+    def test_mark_as_paid_only_works_once(self):
+        """Second call to mark_as_paid returns False (already paid)."""
+        booking = self.create_booking()
+        result1 = booking.mark_as_paid('payment_1')
+        self.assertTrue(result1)
+
+        booking2 = Booking.objects.get(pk=booking.pk)
+        result2 = booking2.mark_as_paid('payment_2')
+        self.assertFalse(result2)
+
+        booking.refresh_from_db()
+        self.assertEqual(booking.stripe_payment_id, 'payment_1')
+
+    def test_mark_as_paid_rejects_non_pending(self):
+        """Cannot pay a cancelled booking."""
+        booking = self.create_booking()
+        booking.cancel()
+
+        result = booking.mark_as_paid('payment_after_cancel')
+        self.assertFalse(result)
+
+    def test_mark_as_paid_stores_receipt_url(self):
+        booking = self.create_booking()
+        booking.mark_as_paid('pi_test', receipt_url='https://receipt.stripe.com/test')
+        booking.refresh_from_db()
+        self.assertEqual(booking.stripe_receipt_url, 'https://receipt.stripe.com/test')
+
+    def test_concurrent_bookings_no_unit_overlap(self):
+        """Two bookings paid sequentially cannot share units."""
+        b1 = self.create_booking(quantity=5)
+        b2 = self.create_booking(quantity=5)
+
+        b1.mark_as_paid('pay_1')
+        b2.mark_as_paid('pay_2')
+
+        units_b1 = set(b1.booking_units.values_list('storage_unit_id', flat=True))
+        units_b2 = set(b2.booking_units.values_list('storage_unit_id', flat=True))
+        self.assertEqual(len(units_b1), 5)
+        self.assertEqual(len(units_b2), 5)
+        self.assertEqual(len(units_b1 & units_b2), 0)
+
+    def test_no_units_left_after_full_booking(self):
+        """After booking all 10 units, next booking fails to assign."""
+        b1 = self.create_booking(quantity=10)
+        b1.mark_as_paid('pay_full')
+
+        b2 = self.create_booking(quantity=1)
+        b2.mark_as_paid('pay_extra')
+        b2.refresh_from_db()
+        # Should be paid but no units assigned
+        self.assertEqual(b2.booking_units.count(), 0)
+
+
+class BookingLifecycleTest(BookingTestMixin, TestCase):
+    """Tests for activate/expire/complete lifecycle methods."""
+
+    def setUp(self):
+        self.create_base_objects()
+
+    def test_activate_paid_booking(self):
+        booking = self.create_booking(
+            start_date=timezone.now().date(),
+        )
+        booking.mark_as_paid('pay_activate')
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PAID)
+
+        booking.activate()
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.ACTIVE)
+
+    def test_activate_ignores_future_start(self):
+        booking = self.create_booking(
+            start_date=timezone.now().date() + timedelta(days=7),
+        )
+        booking.status = Booking.Status.PAID
+        booking.save(update_fields=['status'])
+
+        booking.activate()
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PAID)
+
+    def test_expire_active_booking(self):
+        booking = self.create_booking()
+        booking.status = Booking.Status.ACTIVE
+        booking.end_date = timezone.now().date() - timedelta(days=1)
+        booking.save(update_fields=['status', 'end_date'])
+
+        booking.expire()
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.EXPIRED)
+
+    def test_expire_does_not_release_units(self):
+        """Expired booking keeps units occupied until force release."""
+        booking = self.create_booking(quantity=2)
+        booking.mark_as_paid('pay_expire')
+        booking.refresh_from_db()
+        booking.status = Booking.Status.ACTIVE
+        booking.save(update_fields=['status'])
+        booking.expire()
+
+        # Units should still be unavailable
+        for bu in booking.booking_units.all():
+            self.assertFalse(
+                StorageUnit.objects.get(pk=bu.storage_unit_id).is_available
+            )
+
+    def test_complete_releases_units(self):
+        """Force release (complete) frees units."""
+        booking = self.create_booking(quantity=2)
+        booking.mark_as_paid('pay_complete')
+        booking.refresh_from_db()
+        booking.status = Booking.Status.ACTIVE
+        booking.save(update_fields=['status'])
+        booking.complete()
+
+        for bu in booking.booking_units.all():
+            self.assertTrue(
+                StorageUnit.objects.get(pk=bu.storage_unit_id).is_available
+            )
+        self.assertEqual(booking.status, Booking.Status.COMPLETED)
+
+    def test_extension_mark_as_paid(self):
+        """Extension updates parent end_date and marks itself completed."""
+        parent = self.create_booking()
+        parent.mark_as_paid('pay_parent')
+        parent.refresh_from_db()
+        original_end = parent.end_date
+
+        extension = self.create_booking(
+            parent_booking=parent,
+            start_date=original_end,
+            end_date=original_end + timedelta(days=30),
+        )
+        extension.mark_as_paid('pay_ext')
+        extension.refresh_from_db()
+        parent.refresh_from_db()
+
+        self.assertEqual(extension.status, Booking.Status.COMPLETED)
+        self.assertEqual(parent.end_date, original_end + timedelta(days=30))
+
+
+class UpdateBookingStatusesCommandTest(BookingTestMixin, TestCase):
+    """Tests for update_booking_statuses management command."""
+
+    def setUp(self):
+        self.create_base_objects()
+
+    def test_activates_paid_booking_on_start_date(self):
+        from django.core.management import call_command
+
+        booking = self.create_booking(start_date=timezone.now().date())
+        booking.status = Booking.Status.PAID
+        booking.save(update_fields=['status'])
+
+        call_command('update_booking_statuses')
+
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.ACTIVE)
+
+    def test_expires_active_booking_past_end_date(self):
+        from django.core.management import call_command
+
+        booking = self.create_booking()
+        booking.status = Booking.Status.ACTIVE
+        booking.end_date = timezone.now().date() - timedelta(days=1)
+        booking.save(update_fields=['status', 'end_date'])
+
+        call_command('update_booking_statuses')
+
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.EXPIRED)
+
+    def test_does_not_activate_future_booking(self):
+        from django.core.management import call_command
+
+        booking = self.create_booking(
+            start_date=timezone.now().date() + timedelta(days=5),
+        )
+        booking.status = Booking.Status.PAID
+        booking.save(update_fields=['status'])
+
+        call_command('update_booking_statuses')
 
         booking.refresh_from_db()
         self.assertEqual(booking.status, Booking.Status.PAID)

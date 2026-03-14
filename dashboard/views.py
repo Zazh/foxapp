@@ -42,7 +42,7 @@ class DashboardHomeView(DashboardMixin, TemplateView):
             user=user,
             status=Booking.Status.PENDING,
             expires_at__gt=now,
-        ).order_by('-created_at')[:5]
+        ).select_related('tariff', 'period').order_by('-created_at')[:5]
 
         context['active_bookings'] = active_bookings
         context['pending_bookings'] = pending_bookings
@@ -68,7 +68,7 @@ class DashboardHistoryView(DashboardMixin, TemplateView):
         # Все посещения пользователя (снепшот-данные в самой модели)
         visits = Visit.objects.filter(
             booking__user=user
-        ).order_by('-visited_at')
+        ).select_related('booking').order_by('-visited_at')
 
         context['visits'] = visits
 
