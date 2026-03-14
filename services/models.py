@@ -423,29 +423,6 @@ class TariffBenefit(models.Model):
         return self.text
 
 
-class TariffImage(models.Model):
-    """Фотогалерея тарифа"""
-
-    tariff = models.ForeignKey(
-        Tariff,
-        on_delete=models.CASCADE,
-        related_name='images',
-        verbose_name=_('Tariff')
-    )
-    image = models.ImageField(upload_to='tariffs/', verbose_name=_('Image'))
-    alt_text = models.CharField(max_length=255, blank=True, verbose_name=_('Alt text'))
-    is_cover = models.BooleanField(default=False, verbose_name=_('Cover image'))
-    sort_order = models.PositiveIntegerField(default=0, verbose_name=_('Sort order'))
-
-    class Meta:
-        ordering = ['-is_cover', 'sort_order']
-        verbose_name = _('Tariff image')
-        verbose_name_plural = _('Tariff images')
-
-    def __str__(self):
-        return f"Image for {self.tariff.name}"
-
-
 class AddonService(models.Model):
     """Дополнительные услуги"""
 
