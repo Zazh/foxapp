@@ -99,18 +99,6 @@
 
 <script>
 const isAuthenticated = true;
-
-// Fixed nav scroll handler
-const fixedNav = document.getElementById('fixed-nav');
-if (fixedNav) {
-    window.addEventListener('scroll', () => {
-        if (window.scrollY > 200) {
-            fixedNav.classList.remove('-translate-y-full');
-        } else {
-            fixedNav.classList.add('-translate-y-full');
-        }
-    });
-}
 </script>
 
 
@@ -222,6 +210,18 @@ function startTelegramTimer(minutes) {
 
     updateTimer();
     telegramTimerInterval = setInterval(updateTimer, 1000);
+}
+
+// Закрыть модалку после клика "Open in Telegram" (для авто-открытия с dashboard)
+const globalTelegramLink = document.getElementById('telegram-link');
+if (globalTelegramLink) {
+    globalTelegramLink.addEventListener('click', () => {
+        setTimeout(() => {
+            document.getElementById('modal-connect-telegram').classList.remove('active');
+            document.body.style.overflow = '';
+            if (telegramTimerInterval) clearInterval(telegramTimerInterval);
+        }, 500);
+    });
 }
 
 // Остановить таймер при закрытии модалки
