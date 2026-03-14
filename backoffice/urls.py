@@ -11,14 +11,21 @@ urlpatterns = [
     path('units/<int:pk>/', views.UnitDetailView.as_view(), name='unit_detail'),
     path('units/<int:pk>/toggle/', views.unit_toggle_status, name='unit_toggle'),
 
-    # Bookings (Payments)
+    # Bookings
     path('bookings/', views.BookingListView.as_view(), name='booking_list'),
     path('bookings/<int:pk>/', views.BookingDetailView.as_view(), name='booking_detail'),
     path('bookings/<int:pk>/release/', views.booking_release, name='booking_release'),
+    path('bookings/<int:pk>/reassign/', views.booking_reassign_unit, name='booking_reassign'),
+    path('bookings/<int:pk>/notes/', views.booking_update_notes, name='booking_update_notes'),
+
+    # Payments
+    path('payments/', views.PaymentListView.as_view(), name='payment_list'),
+    path('payments/<int:pk>/fetch-receipt/', views.payment_fetch_receipt, name='payment_fetch_receipt'),
 
     # Users
     path('users/', views.UserListView.as_view(), name='user_list'),
     path('users/<int:pk>/', views.UserDetailView.as_view(), name='user_detail'),
+    path('users/<int:pk>/update/', views.user_update, name='user_update'),
 
     # Visits
     path('visits/', views.VisitListView.as_view(), name='visit_list'),

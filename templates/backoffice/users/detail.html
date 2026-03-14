@@ -7,56 +7,119 @@
     <a href="{% url 'backoffice:user_list' %}" class="text-blue-600 hover:underline text-sm">← Back to users</a>
 </div>
 
+{% if messages %}
+<div class="mb-6">
+    {% for message in messages %}
+    <div class="px-4 py-3 rounded-lg text-sm font-medium {% if message.tags == 'success' %}bg-green-50 text-green-800{% else %}bg-red-50 text-red-800{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Profile Card -->
-    <div class="bg-white rounded-lg shadow p-6">
-        <div class="flex items-center gap-4 mb-6">
-            <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-2xl font-bold">
-                {{ profile_user.first_name|slice:":1" }}{{ profile_user.last_name|slice:":1" }}
+    <div class="space-y-6">
+        <div class="bg-white rounded-lg shadow p-6">
+            <div class="flex items-center gap-4 mb-6">
+                <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center text-2xl font-bold">
+                    {{ profile_user.first_name|slice:":1" }}{{ profile_user.last_name|slice:":1" }}
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold">{{ profile_user.get_full_name|default:"No name" }}</h1>
+                    <p class="text-gray-500">{{ profile_user.email }}</p>
+                </div>
             </div>
-            <div>
-                <h1 class="text-xl font-bold">{{ profile_user.get_full_name|default:"No name" }}</h1>
-                <p class="text-gray-500">{{ profile_user.email }}</p>
-            </div>
+
+            <form method="post" action="{% url 'backoffice:user_update' profile_user.pk %}">
+                {% csrf_token %}
+                <div class="space-y-4">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">First Name</label>
+                            <input type="text" name="first_name" value="{{ profile_user.first_name }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-500 mb-1">Last Name</label>
+                            <input type="text" name="last_name" value="{{ profile_user.last_name }}"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Middle Name</label>
+                        <input type="text" name="middle_name" value="{{ profile_user.middle_name }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Email</label>
+                        <input type="email" name="email" value="{{ profile_user.email }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">Phone</label>
+                        <input type="tel" name="phone" value="{{ profile_user.phone }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-500 mb-1">ID Card</label>
+                        <input type="text" name="id_card" value="{{ profile_user.id_card }}"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">
+                    </div>
+
+                    <button type="submit" class="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium">
+                        Save Changes
+                    </button>
+                </div>
+            </form>
         </div>
-        
-        <dl class="space-y-3">
-            <div>
-                <dt class="text-sm text-gray-500">Phone</dt>
-                <dd class="font-medium">{{ profile_user.phone|default:"-" }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm text-gray-500">Language</dt>
-                <dd class="font-medium">{{ profile_user.language|default:"en" }}</dd>
-            </div>
-            <div>
-                <dt class="text-sm text-gray-500">Verified</dt>
-                <dd>
-                    {% if profile_user.is_verified %}
-                    <span class="text-green-600 font-medium">Yes</span>
-                    {% else %}
-                    <span class="text-red-600 font-medium">No</span>
-                    {% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm text-gray-500">Telegram</dt>
-                <dd>
-                    {% if profile_user.telegram_id %}
-                    <span class="text-blue-600 font-medium">Connected</span>
-                    {% if profile_user.telegram_username %}
-                    <span class="text-gray-500">(@{{ profile_user.telegram_username }})</span>
-                    {% endif %}
-                    {% else %}
-                    <span class="text-gray-400">Not connected</span>
-                    {% endif %}
-                </dd>
-            </div>
-            <div>
-                <dt class="text-sm text-gray-500">Joined</dt>
-                <dd class="font-medium">{{ profile_user.date_joined|date:"d M Y H:i" }}</dd>
-            </div>
-        </dl>
+
+        <!-- Info -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="font-semibold mb-3">Account Info</h2>
+            <dl class="space-y-3 text-sm">
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Verified</dt>
+                    <dd>
+                        {% if profile_user.is_verified %}
+                        <span class="text-green-600 font-medium">Yes</span>
+                        {% else %}
+                        <span class="text-red-600 font-medium">No</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Status</dt>
+                    <dd>
+                        {% if profile_user.is_active %}
+                        <span class="text-green-600 font-medium">Active</span>
+                        {% else %}
+                        <span class="text-red-600 font-medium">Deactivated</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Telegram</dt>
+                    <dd>
+                        {% if profile_user.telegram_id %}
+                        <span class="text-blue-600 font-medium">
+                            {% if profile_user.telegram_username %}@{{ profile_user.telegram_username }}{% else %}Connected{% endif %}
+                        </span>
+                        {% else %}
+                        <span class="text-gray-400">Not connected</span>
+                        {% endif %}
+                    </dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Language</dt>
+                    <dd class="font-medium">{{ profile_user.language|default:"en" }}</dd>
+                </div>
+                <div class="flex justify-between">
+                    <dt class="text-gray-500">Joined</dt>
+                    <dd class="font-medium">{{ profile_user.date_joined|date:"d M Y" }}</dd>
+                </div>
+            </dl>
+        </div>
     </div>
 
     <!-- Bookings -->
@@ -81,11 +144,11 @@
                         <td class="px-6 py-4">
                             <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline">#{{ booking.pk }}</a>
                         </td>
-                        <td class="px-6 py-4 text-sm">{{ booking.tariff.name }}</td>
-                        <td class="px-6 py-4 text-sm font-mono">{{ booking.storage_unit.full_code|default:"-" }}</td>
+                        <td class="px-6 py-4 text-sm">{{ booking.tariff_name|default:booking.tariff.name }}</td>
+                        <td class="px-6 py-4 text-sm font-mono">{{ booking.unit_codes|default:"-" }}</td>
                         <td class="px-6 py-4 text-sm">{{ booking.start_date|date:"d M" }} → {{ booking.end_date|date:"d M Y" }}</td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex px-2 py-1 text-xs rounded-full 
+                            <span class="inline-flex px-2 py-1 text-xs rounded-full
                                 {% if booking.status == 'paid' or booking.status == 'active' %}bg-green-100 text-green-800
                                 {% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800
                                 {% elif booking.status == 'cancelled' %}bg-red-100 text-red-800

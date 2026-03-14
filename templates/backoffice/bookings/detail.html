@@ -27,19 +27,27 @@
             <dl class="grid grid-cols-2 gap-4">
                 <div>
                     <dt class="text-sm text-gray-500">Tariff</dt>
-                    <dd class="font-medium">{{ booking.tariff.name }}</dd>
+                    <dd class="font-medium">{{ booking.tariff_name|default:booking.tariff.name }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm text-gray-500">Service</dt>
+                    <dd class="font-medium">{{ booking.service_name|default:"-" }}</dd>
                 </div>
                 <div>
                     <dt class="text-sm text-gray-500">Location</dt>
-                    <dd class="font-medium">{{ booking.tariff.location.name }}</dd>
+                    <dd class="font-medium">{{ booking.location_name|default:booking.tariff.location.name }}</dd>
                 </div>
                 <div>
                     <dt class="text-sm text-gray-500">Storage Unit</dt>
-                    <dd class="font-medium font-mono">{{ booking.storage_unit.full_code|default:"Not assigned" }}</dd>
+                    <dd class="font-medium font-mono">{{ booking.unit_codes|default:"Not assigned" }}</dd>
                 </div>
                 <div>
                     <dt class="text-sm text-gray-500">Period</dt>
-                    <dd class="font-medium">{{ booking.period.get_period_type_display }} ({{ booking.period.duration_value }} {{ booking.period.get_duration_type_display }})</dd>
+                    <dd class="font-medium">{{ booking.period_label|default:booking.period.duration_display }}</dd>
+                </div>
+                <div>
+                    <dt class="text-sm text-gray-500">Quantity</dt>
+                    <dd class="font-medium">{{ booking.quantity }}</dd>
                 </div>
                 <div>
                     <dt class="text-sm text-gray-500">Start Date</dt>
@@ -52,18 +60,85 @@
             </dl>
         </div>
 
-        {% if booking.status == 'expired' %}
-        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
-            <p class="text-red-800 font-medium mb-2">⚠️ This booking has expired but the unit is not released yet.</p>
-            <form method="post" action="{% url 'backoffice:booking_release' booking.pk %}"
-                  onsubmit="return confirm('Release unit {{ booking.storage_unit.full_code }}? Make sure the unit is empty!');">
-                {% csrf_token %}
-                <button type="submit" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
-                    Release Unit
-                </button>
-            </form>
+        <!-- Manager Notes -->
+        <div class="bg-white rounded-lg shadow p-6" id="notes-block">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-lg font-semibold">Manager Notes</h2>
+                {% if booking.manager_notes %}
+                <button type="button" onclick="document.getElementById('notes-view').classList.add('hidden'); document.getElementById('notes-edit').classList.remove('hidden');"
+                        class="text-sm text-blue-600 hover:underline" id="notes-edit-btn">Edit</button>
+                {% endif %}
+            </div>
+
+            <!-- View mode -->
+            <div id="notes-view" {% if not booking.manager_notes %}class="hidden"{% endif %}>
+                {% if booking.manager_notes %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <p class="text-sm text-gray-800 whitespace-pre-line">{{ booking.manager_notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Edit mode -->
+            <div id="notes-edit" {% if booking.manager_notes %}class="hidden"{% endif %}>
+                <form method="post" action="{% url 'backoffice:booking_update_notes' booking.pk %}" id="notes-form">
+                    {% csrf_token %}
+                    <textarea name="manager_notes" rows="4" placeholder="Refund details, reassign reasons, reminders..."
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm">{{ booking.manager_notes }}</textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <span id="notes-saved" class="text-sm text-green-600 hidden">Saved</span>
+                        <div class="flex gap-2 ml-auto">
+                            {% if booking.manager_notes %}
+                            <button type="button" onclick="document.getElementById('notes-edit').classList.add('hidden'); document.getElementById('notes-view').classList.remove('hidden');"
+                                    class="px-4 py-2 text-gray-600 hover:text-gray-900 text-sm">Cancel</button>
+                            {% endif %}
+                            <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm">Save</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
-        {% endif %}
+        <script>
+        document.getElementById('notes-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            var form = this;
+            fetch(form.action, {
+                method: 'POST',
+                body: new FormData(form),
+                headers: {'X-Requested-With': 'XMLHttpRequest'}
+            }).then(function(r) { return r.json(); }).then(function(data) {
+                if (data.success) {
+                    var text = form.querySelector('textarea').value;
+                    var viewDiv = document.getElementById('notes-view');
+                    var editDiv = document.getElementById('notes-edit');
+                    var editBtn = document.getElementById('notes-edit-btn');
+
+                    if (text) {
+                        viewDiv.innerHTML = '<div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4"><p class="text-sm text-gray-800 whitespace-pre-line">' +
+                            text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p></div>';
+                        viewDiv.classList.remove('hidden');
+                        editDiv.classList.add('hidden');
+                        if (!editBtn) {
+                            var btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.id = 'notes-edit-btn';
+                            btn.className = 'text-sm text-blue-600 hover:underline';
+                            btn.textContent = 'Edit';
+                            btn.onclick = function() { viewDiv.classList.add('hidden'); editDiv.classList.remove('hidden'); };
+                            document.querySelector('#notes-block .flex').appendChild(btn);
+                        } else {
+                            editBtn.classList.remove('hidden');
+                        }
+                    } else {
+                        viewDiv.innerHTML = '';
+                        viewDiv.classList.add('hidden');
+                        editDiv.classList.remove('hidden');
+                        if (editBtn) editBtn.classList.add('hidden');
+                    }
+                }
+            });
+        });
+        </script>
 
         <!-- Payment Info -->
         <div class="bg-white rounded-lg shadow p-6">
@@ -94,6 +169,14 @@
                 <p class="text-sm text-gray-500">Paid at: {{ booking.paid_at|date:"d M Y H:i" }}</p>
                 {% if booking.stripe_payment_id %}
                 <p class="text-sm text-gray-500">Stripe ID: {{ booking.stripe_payment_id }}</p>
+                {% endif %}
+                {% if booking.stripe_receipt_url %}
+                <a href="{{ booking.stripe_receipt_url }}" target="_blank" class="inline-flex items-center gap-1 mt-2 text-blue-600 hover:underline text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                    View Receipt
+                </a>
                 {% endif %}
             </div>
             {% endif %}
@@ -140,6 +223,8 @@
             </table>
         </div>
         {% endif %}
+
+        <!-- Manager Notes -->
     </div>
 
     <!-- Sidebar -->

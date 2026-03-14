@@ -1,0 +1,207 @@
+{% extends 'backoffice/base.html' %}
+
+{% block title %}Payments{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="mb-8 flex justify-between items-center">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Payments</h1>
+        <p class="text-gray-600">Payment history and transactions</p>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-4 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-sm text-gray-500">Total Paid</p>
+        <p class="text-2xl font-bold text-green-600">{{ stats.total_paid }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-sm text-gray-500">Revenue</p>
+        <p class="text-2xl font-bold text-gray-900">AED {{ stats.total_revenue|floatformat:0 }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-sm text-gray-500">Pending</p>
+        <p class="text-2xl font-bold text-yellow-600">{{ stats.pending }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4">
+        <p class="text-sm text-gray-500">Failed / Cancelled</p>
+        <p class="text-2xl font-bold text-red-600">{{ stats.failed }}</p>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="bg-white rounded-lg shadow mb-6 p-4">
+    <form method="get" class="flex gap-4 items-end">
+        <div class="flex-1">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
+            <input type="text" name="search" value="{{ search }}" placeholder="Email, name, Stripe ID, booking ID..."
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+        </div>
+        <div class="w-48">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Payment Status</label>
+            <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">All</option>
+                <option value="paid" {% if current_status == 'paid' %}selected{% endif %}>Paid</option>
+                <option value="pending" {% if current_status == 'pending' %}selected{% endif %}>Pending</option>
+                <option value="failed" {% if current_status == 'failed' %}selected{% endif %}>Failed / Cancelled</option>
+            </select>
+        </div>
+        <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">Filter</button>
+        {% if search or current_status %}
+        <a href="{% url 'backoffice:payment_list' %}" class="px-4 py-2 text-gray-600 hover:text-gray-900">Clear</a>
+        {% endif %}
+    </form>
+</div>
+
+<!-- Table -->
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="w-full">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stripe ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receipt</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-200">
+            {% for payment in payments %}
+            <tr class="hover:bg-gray-50 {% if payment.status == 'pending' and payment.expires_at > now %}bg-yellow-50{% elif payment.status == 'cancelled' and not payment.paid_at %}bg-red-50{% endif %}">
+                <td class="px-6 py-4">
+                    <a href="{% url 'backoffice:booking_detail' payment.pk %}" class="text-blue-600 hover:underline font-medium">#{{ payment.pk }}</a>
+                </td>
+                <td class="px-6 py-4">
+                    <a href="{% url 'backoffice:user_detail' payment.user.pk %}" class="hover:underline">
+                        <div class="text-sm font-medium text-gray-900">{{ payment.user.get_full_name|default:payment.user.email }}</div>
+                        <div class="text-sm text-gray-500">{{ payment.user.email }}</div>
+                    </a>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    <p class="font-medium">{{ payment.tariff_name|default:payment.tariff.name }}</p>
+                    <p class="text-gray-500 text-xs">{{ payment.period_label|default:"-" }}{% if payment.parent_booking %} (Extension){% endif %}</p>
+                </td>
+                <td class="px-6 py-4">
+                    <div class="font-bold">AED {{ payment.total_aed|floatformat:0 }}</div>
+                    {% if payment.deposit_aed %}
+                    <div class="text-xs text-gray-400">incl. deposit {{ payment.deposit_aed|floatformat:0 }}</div>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4">
+                    {% if payment.paid_at %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Paid</span>
+                    {% elif payment.status == 'pending' %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">Pending</span>
+                    {% elif payment.status == 'cancelled' %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Failed</span>
+                    {% else %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{{ payment.get_status_display }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    {% if payment.stripe_payment_id %}
+                    <span class="font-mono text-xs text-gray-600">{{ payment.stripe_payment_id|truncatechars:24 }}</span>
+                    {% else %}
+                    <span class="text-gray-400">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm" id="receipt-{{ payment.pk }}">
+                    {% if payment.stripe_receipt_url %}
+                    <a href="{{ payment.stripe_receipt_url }}" target="_blank" class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded text-xs font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                        Receipt
+                    </a>
+                    {% elif payment.stripe_payment_id and payment.stripe_payment_id|slice:":3" == "pi_" %}
+                    <button type="button" onclick="fetchReceipt({{ payment.pk }}, this)"
+                            class="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-600 hover:bg-gray-200 rounded text-xs font-medium">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        Fetch
+                    </button>
+                    {% elif payment.stripe_payment_id %}
+                    <span class="text-xs text-gray-400">Mock</span>
+                    {% else %}
+                    <span class="text-gray-400">—</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500">
+                    {% if payment.paid_at %}
+                    {{ payment.paid_at|date:"d M Y H:i" }}
+                    {% else %}
+                    {{ payment.created_at|date:"d M Y H:i" }}
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="8" class="px-6 py-8 text-center text-gray-500">No payments found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="mt-6 flex justify-center gap-2">
+    {% if page_obj.has_previous %}
+    <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}"
+       class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
+    {% endif %}
+
+    <span class="px-4 py-2 text-gray-600">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}"
+       class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
+    {% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+function fetchReceipt(bookingId, btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-4 h-4 animate-spin" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" class="opacity-25"></circle><path fill="currentColor" class="opacity-75" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg>';
+
+    fetch('/backoffice/payments/' + bookingId + '/fetch-receipt/', {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                           document.cookie.match(/csrftoken=([^;]+)/)?.[1] || ''
+        }
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        var cell = document.getElementById('receipt-' + bookingId);
+        if (data.success && data.receipt_url) {
+            cell.innerHTML = '<a href="' + data.receipt_url + '" target="_blank" ' +
+                'class="inline-flex items-center gap-1 px-2 py-1 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded text-xs font-medium">' +
+                '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>' +
+                '</svg>Receipt</a>';
+        } else {
+            btn.disabled = false;
+            btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg> N/A';
+            btn.className = 'inline-flex items-center gap-1 px-2 py-1 bg-red-50 text-red-400 rounded text-xs font-medium cursor-default';
+            btn.onclick = null;
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Error';
+    });
+}
+</script>
+{% endblock %}

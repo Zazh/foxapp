@@ -1,13 +1,31 @@
 {% extends 'backoffice/base.html' %}
+{% load i18n %}
 
 {% block title %}Bookings{% endblock %}
 
 {% block content %}
-<div class="mb-8 flex justify-between items-center">
-    <div>
-        <h1 class="text-2xl font-bold text-gray-900">Bookings</h1>
-        <p class="text-gray-600">Manage all bookings</p>
-    </div>
+<div class="mb-8">
+    <h1 class="text-2xl font-bold text-gray-900">Bookings</h1>
+    <p class="text-gray-600">Active rentals and units requiring attention</p>
+</div>
+
+<!-- Stats -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <a href="?status=expired" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition {% if current_status == 'expired' %}ring-2 ring-red-500{% endif %}">
+        <p class="text-sm text-gray-500">Expired</p>
+        <p class="text-2xl font-bold text-red-600">{{ stats.expired }}</p>
+        <p class="text-xs text-gray-400 mt-1">Needs release</p>
+    </a>
+    <a href="?status=expiring_soon" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition {% if current_status == 'expiring_soon' %}ring-2 ring-orange-500{% endif %}">
+        <p class="text-sm text-gray-500">Expiring Soon</p>
+        <p class="text-2xl font-bold text-orange-600">{{ stats.expiring_soon }}</p>
+        <p class="text-xs text-gray-400 mt-1">Within 14 days</p>
+    </a>
+    <a href="?status=active" class="bg-white rounded-lg shadow p-4 hover:shadow-md transition {% if current_status == 'active' %}ring-2 ring-green-500{% endif %}">
+        <p class="text-sm text-gray-500">Active</p>
+        <p class="text-2xl font-bold text-green-600">{{ stats.active }}</p>
+        <p class="text-xs text-gray-400 mt-1">Current rentals</p>
+    </a>
 </div>
 
 <!-- Filters -->
@@ -15,16 +33,16 @@
     <form method="get" class="flex gap-4 items-end">
         <div class="flex-1">
             <label class="block text-sm font-medium text-gray-700 mb-1">Search</label>
-            <input type="text" name="search" value="{{ search }}" placeholder="Email, name, unit, ID..." 
+            <input type="text" name="search" value="{{ search }}" placeholder="Email, name, unit, ID..."
                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
         </div>
         <div class="w-48">
-            <label class="block text-sm font-medium text-gray-700 mb-1">Status</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Filter</label>
             <select name="status" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
-                <option value="">All statuses</option>
-                {% for value, label in statuses %}
-                <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
+                <option value="">All (active + expired)</option>
+                <option value="active" {% if current_status == 'active' %}selected{% endif %}>Active</option>
+                <option value="expiring_soon" {% if current_status == 'expiring_soon' %}selected{% endif %}>Expiring soon (14 days)</option>
+                <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expired (unreleased)</option>
             </select>
         </div>
         <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">Filter</button>
@@ -44,14 +62,13 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Tariff</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Unit</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Period</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expires</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-200">
             {% for booking in bookings %}
-            <tr class="hover:bg-gray-50">
+            <tr class="{% if booking.status == 'expired' %}bg-red-50 hover:bg-red-100{% elif booking.days_remaining <= 7 %}bg-orange-50 hover:bg-orange-100{% elif booking.days_remaining <= 14 %}bg-yellow-50 hover:bg-yellow-100{% else %}hover:bg-gray-50{% endif %}">
                 <td class="px-6 py-4">
                     <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline font-medium">#{{ booking.pk }}</a>
                 </td>
@@ -61,26 +78,37 @@
                         <div class="text-sm text-gray-500">{{ booking.user.email }}</div>
                     </a>
                 </td>
-                <td class="px-6 py-4 text-sm">{{ booking.tariff.name }}</td>
-                <td class="px-6 py-4 text-sm font-mono">{{ booking.storage_unit.full_code|default:"-" }}</td>
                 <td class="px-6 py-4 text-sm">
-                    {{ booking.start_date|date:"d M" }} → {{ booking.end_date|date:"d M Y" }}
+                    <p class="font-medium">{{ booking.tariff_name|default:booking.tariff.name }}</p>
+                    <p class="text-gray-400 text-xs">{{ booking.location_name|default:"-" }}</p>
+                </td>
+                <td class="px-6 py-4 text-sm font-mono font-medium">{{ booking.unit_codes|default:"-" }}</td>
+                <td class="px-6 py-4 text-sm">
+                    {{ booking.start_date|date:"d M" }} — {{ booking.end_date|date:"d M Y" }}
+                    <div class="text-xs text-gray-400">{{ booking.period_label }}</div>
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    {% if booking.status == 'expired' %}
+                    <span class="text-red-600 font-bold">{{ booking.days_overdue }} days overdue</span>
+                    {% elif booking.days_remaining <= 7 %}
+                    <span class="text-orange-600 font-bold">{{ booking.days_remaining }}d left</span>
+                    {% elif booking.days_remaining <= 14 %}
+                    <span class="text-yellow-600 font-medium">{{ booking.days_remaining }}d left</span>
+                    {% else %}
+                    <span class="text-gray-500">{{ booking.days_remaining }}d left</span>
+                    {% endif %}
                 </td>
                 <td class="px-6 py-4">
-                    <span class="inline-flex px-2 py-1 text-xs rounded-full 
-                        {% if booking.status == 'paid' or booking.status == 'active' %}bg-green-100 text-green-800
-                        {% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800
-                        {% elif booking.status == 'cancelled' %}bg-red-100 text-red-800
-                        {% else %}bg-gray-100 text-gray-800{% endif %}">
-                        {{ booking.get_status_display }}
-                    </span>
+                    {% if booking.status == 'expired' %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Expired</span>
+                    {% else %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>
+                    {% endif %}
                 </td>
-                <td class="px-6 py-4 font-medium">AED {{ booking.total_aed }}</td>
-                <td class="px-6 py-4 text-sm text-gray-500">{{ booking.created_at|date:"d M Y H:i" }}</td>
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="px-6 py-8 text-center text-gray-500">No bookings found</td>
+                <td colspan="7" class="px-6 py-8 text-center text-gray-500">No active bookings</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -91,14 +119,14 @@
 {% if page_obj.has_other_pages %}
 <div class="mt-6 flex justify-center gap-2">
     {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" 
+    <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}"
        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
     {% endif %}
-    
+
     <span class="px-4 py-2 text-gray-600">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
-    
+
     {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}" 
+    <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}"
        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
     {% endif %}
 </div>

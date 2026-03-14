@@ -9,7 +9,7 @@
 </div>
 
 <!-- Stats -->
-<div class="grid grid-cols-3 gap-4 mb-6">
+<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4">
         <div class="text-sm text-gray-500">Total Units</div>
         <div class="text-2xl font-bold">{{ stats.total }}</div>
@@ -18,9 +18,17 @@
         <div class="text-sm text-green-600">Available</div>
         <div class="text-2xl font-bold text-green-700">{{ stats.available }}</div>
     </div>
+    <div class="bg-blue-50 rounded-lg shadow p-4">
+        <div class="text-sm text-blue-600">Occupied</div>
+        <div class="text-2xl font-bold text-blue-700">{{ stats.occupied }}</div>
+    </div>
+    <div class="bg-orange-50 rounded-lg shadow p-4">
+        <div class="text-sm text-orange-600">Expiring Soon</div>
+        <div class="text-2xl font-bold text-orange-700">{{ stats.expiring_soon }}</div>
+    </div>
     <div class="bg-red-50 rounded-lg shadow p-4">
-        <div class="text-sm text-red-600">Occupied</div>
-        <div class="text-2xl font-bold text-red-700">{{ stats.occupied }}</div>
+        <div class="text-sm text-red-600">Expired</div>
+        <div class="text-2xl font-bold text-red-700">{{ stats.expired }}</div>
     </div>
 </div>
 
@@ -48,6 +56,9 @@
                 <option value="available" {% if current_status == 'available' %}selected{% endif %}>Available</option>
                 <option value="occupied" {% if current_status == 'occupied' %}selected{% endif %}>Occupied</option>
                 <option value="inactive" {% if current_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                <option disabled>───────────</option>
+                <option value="expiring_soon" {% if current_status == 'expiring_soon' %}selected{% endif %}>Expiring soon (14 days)</option>
+                <option value="expired" {% if current_status == 'expired' %}selected{% endif %}>Expired (unreleased)</option>
             </select>
         </div>
         <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">Filter</button>
@@ -74,7 +85,7 @@
         <tbody class="divide-y divide-gray-200">
             {% for unit in units %}
             {% with current_booking=unit.current_booking %}
-            <tr class="hover:bg-gray-50">
+            <tr class="{% if current_booking and current_booking.status == 'expired' %}bg-red-50 hover:bg-red-100{% elif current_booking and current_booking.days_remaining <= 7 and not unit.is_available %}bg-orange-50 hover:bg-orange-100{% elif current_booking and current_booking.days_remaining <= 14 and not unit.is_available %}bg-yellow-50 hover:bg-yellow-100{% else %}hover:bg-gray-50{% endif %}">
                 <td class="px-6 py-4">
                     <a href="{% url 'backoffice:unit_detail' unit.pk %}" class="font-mono font-bold text-blue-600 hover:underline">
                         {{ unit.full_code }}
@@ -109,12 +120,18 @@
                 </td>
                 <td class="px-6 py-4 text-sm">
                     {% if not unit.is_available and current_booking %}
-                    <span class="{% if current_booking.days_remaining <= 7 %}text-red-600 font-medium{% endif %}">
-                        {{ current_booking.end_date|date:"d M Y" }}
-                    </span>
-                    {% if current_booking.days_remaining <= 7 %}
-                    <span class="text-xs text-red-500 block">{{ current_booking.days_remaining }} days left</span>
-                    {% endif %}
+                        {% if current_booking.status == 'expired' %}
+                        <span class="text-red-600 font-medium">{{ current_booking.end_date|date:"d M Y" }}</span>
+                        <span class="text-xs text-red-600 font-bold block">{{ current_booking.days_overdue }}d overdue</span>
+                        {% elif current_booking.days_remaining <= 7 %}
+                        <span class="text-red-600 font-medium">{{ current_booking.end_date|date:"d M Y" }}</span>
+                        <span class="text-xs text-red-500 block">{{ current_booking.days_remaining }}d left</span>
+                        {% elif current_booking.days_remaining <= 14 %}
+                        <span class="text-orange-600 font-medium">{{ current_booking.end_date|date:"d M Y" }}</span>
+                        <span class="text-xs text-orange-500 block">{{ current_booking.days_remaining }}d left</span>
+                        {% else %}
+                        <span>{{ current_booking.end_date|date:"d M Y" }}</span>
+                        {% endif %}
                     {% else %}
                     <span class="text-gray-400">—</span>
                     {% endif %}
