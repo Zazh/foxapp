@@ -2,6 +2,8 @@
 {% load i18n %}
 
 {% block title %}{{ policy.title }} — FoxBox{% endblock %}
+{% block meta_description %}{{ policy.title }} — FoxBox car storage. {{ policy.content|striptags|truncatewords:25 }}{% endblock %}
+{% block og_title %}{{ policy.title }} — FoxBox{% endblock %}
 {% block header_class %}default{% endblock %}
 
 {% block content %}

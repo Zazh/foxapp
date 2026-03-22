@@ -2,7 +2,10 @@
 {% load i18n %}
 {% load static %}
 
-{% block title %}{{ tariff.name }} — {{ service.name }}{% endblock %}
+{% block title %}{{ tariff.name }} — {{ service.name }} | FoxBox{% endblock %}
+{% block meta_description %}{{ tariff.name }} — {{ service.name }} in Dubai. {{ tariff.description|striptags|truncatewords:25 }}{% endblock %}
+{% block og_title %}{{ tariff.name }} — {{ service.name }} | FoxBox{% endblock %}
+{% block og_description %}{{ tariff.name }} — {{ service.name }}. {{ tariff.description|striptags|truncatewords:20 }}{% endblock %}
 {% block header_class %}default{% endblock %}
 
 {% block stylesheets %}

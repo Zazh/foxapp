@@ -1,7 +1,10 @@
 {% extends 'public/base.html' %}
 {% load static i18n %}
 
-{% block title %}{% trans "Contacts" %}{% endblock %}
+{% block title %}{% trans "Contacts" %} — FoxBox{% endblock %}
+{% block meta_description %}{% trans 'Contact FoxBox car storage in Dubai. Get in touch for questions about storage, access, or pricing.' %}{% endblock %}
+{% block og_title %}{% trans "Contacts" %} — FoxBox{% endblock %}
+{% block og_description %}{% trans 'Contact FoxBox car storage in Dubai. Questions about storage, access, or pricing.' %}{% endblock %}
 {% block header_class %}default{% endblock %}
 
 {% block stylesheets %}

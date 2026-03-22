@@ -1,9 +1,12 @@
 {% extends 'public/base.html' %}
 {% load static i18n %}
 
-{% block title %}
-    {% trans 'Home page' %}
-{% endblock %}
+{% block title %}FoxBox — {% trans 'Secure Car Storage in Dubai' %}{% endblock %}
+{% block meta_description %}{% trans 'Premium car storage in Dubai. Climate-controlled, 24/7 access, CCTV surveillance. Transparent pricing and easy online booking. Reserve your spot at FoxBox.' %}{% endblock %}
+{% block og_title %}FoxBox — {% trans 'Secure Car Storage in Dubai' %}{% endblock %}
+{% block og_description %}{% trans 'Premium car storage in Dubai. Climate-controlled, 24/7 access, CCTV surveillance. Reserve your spot.' %}{% endblock %}
+{% block twitter_title %}FoxBox — {% trans 'Secure Car Storage in Dubai' %}{% endblock %}
+{% block twitter_description %}{% trans 'Premium car storage in Dubai. Climate-controlled, 24/7 access, CCTV surveillance. Reserve your spot.' %}{% endblock %}
 
 {% block header %}
     {% include 'components/header.html' with header_class='hero' %}

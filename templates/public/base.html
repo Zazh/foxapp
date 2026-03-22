@@ -1,4 +1,4 @@
-{% load static i18n %}
+{% load static i18n seo_tags %}
 {% get_current_language as LANGUAGE_CODE %}
 {% get_current_language_bidi as LANGUAGE_BIDI %}
 
@@ -9,7 +9,54 @@
     <meta name="viewport"
           content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
-    <title>{% block title %}FoxBox{% endblock %}</title>
+    <meta name="theme-color" content="#E26137">
+
+    <title>{% block title %}FoxBox — Premium Car Storage in Dubai{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}Secure car storage in Dubai. Climate-controlled facility with 24/7 access, CCTV surveillance, and flexible booking. Reserve your spot at FoxBox.{% endblock %}">
+
+    {# Canonical & hreflang #}
+    {% block canonical %}{% hreflang_tags %}{% endblock %}
+
+    {# Open Graph #}
+    <meta property="og:site_name" content="FoxBox">
+    <meta property="og:locale" content="{{ LANGUAGE_CODE }}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:title" content="{% block og_title %}FoxBox — Premium Car Storage in Dubai{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}Secure car storage in Dubai. Climate-controlled facility with 24/7 access, CCTV surveillance, and flexible booking.{% endblock %}">
+    <meta property="og:url" content="{% block og_url %}{% canonical_url %}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% static 'dist/images/product.png' %}{% endblock %}">
+
+    {# Twitter Card #}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}FoxBox — Premium Car Storage in Dubai{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}Secure car storage in Dubai with 24/7 access and flexible booking.{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{% static 'dist/images/product.png' %}{% endblock %}">
+
+    {# Favicon #}
+    <link rel="icon" type="image/svg+xml" href="{% static 'dist/images/svgs/logo-fox.svg' %}">
+    <link rel="apple-touch-icon" href="{% static 'dist/images/svgs/logo-fox.svg' %}">
+
+    {# JSON-LD #}
+    {% block jsonld %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "LocalBusiness",
+        "name": "FoxBox",
+        "description": "Premium car storage facility in Dubai",
+        "url": "https://foxbox.ae",
+        "logo": "https://foxbox.ae{% static 'dist/images/svgs/logo.svg' %}",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Dubai",
+            "addressCountry": "AE"
+        },
+        "areaServed": "Dubai",
+        "priceRange": "$$"
+    }
+    </script>
+    {% endblock %}
+
     {% block stylesheets %}{% endblock %}
     <link rel="stylesheet" href="{% static 'dist/css/styles.css' %}?v={{ CACHE_BUSTER }}">
 </head>

@@ -1,7 +1,10 @@
 {% extends 'public/base.html' %}
 {% load static i18n %}
 
-{% block title %}{% trans 'About' %}{% endblock %}
+{% block title %}{% trans 'About' %} — FoxBox{% endblock %}
+{% block meta_description %}{% trans 'FoxBox is a premium car storage facility in Dubai. Secure, professionally managed indoor storage for vehicles. Protection, privacy, and peace of mind.' %}{% endblock %}
+{% block og_title %}{% trans 'About' %} — FoxBox{% endblock %}
+{% block og_description %}{% trans 'FoxBox is a premium car storage facility in Dubai. Secure indoor storage for vehicles.' %}{% endblock %}
 {% block header_class %}default{% endblock %}
 
 {% block content %}
