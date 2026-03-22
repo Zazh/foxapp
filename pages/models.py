@@ -173,13 +173,30 @@ class HomeBenefit(models.Model):
 class HomeGallerySlide(models.Model):
     """Gallery slide on home page"""
 
+    SLIDE_TYPE_CHOICES = [
+        ('image', _('Image')),
+        ('video', _('Video')),
+    ]
+
     page = models.ForeignKey(
         HomePage,
         on_delete=models.CASCADE,
         related_name='gallery_slides',
         verbose_name=_('Page'),
     )
-    image = models.ImageField(_('Image'), upload_to='pages/gallery/')
+    slide_type = models.CharField(
+        _('Slide type'),
+        max_length=10,
+        choices=SLIDE_TYPE_CHOICES,
+        default='image',
+    )
+    image = models.ImageField(_('Image'), upload_to='pages/gallery/', blank=True)
+    video = models.FileField(
+        _('Video'),
+        upload_to='pages/gallery/',
+        blank=True,
+        help_text=_('MP4 video file. Used when slide type is "Video".'),
+    )
     alt_text = models.CharField(_('Alt text'), max_length=255, blank=True)
     caption = models.CharField(_('Caption'), max_length=255, blank=True)
     sort_order = models.PositiveIntegerField(_('Sort order'), default=0)
@@ -193,7 +210,7 @@ class HomeGallerySlide(models.Model):
         return self.alt_text or f'Slide {self.sort_order}'
 
     def save(self, *args, **kwargs):
-        if self.image and not self.image.name.endswith('.webp'):
+        if self.slide_type == 'image' and self.image and not self.image.name.endswith('.webp'):
             self.image = compress_to_webp(self.image)
         super().save(*args, **kwargs)
 

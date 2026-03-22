@@ -146,8 +146,12 @@
             <!-- Slides Container -->
             <div class="gallery-slides rounded-3xl md:rounded-4xl aspect-[16/9] lg:aspect-[21/9] overflow-hidden">
                 {% for slide in gallery_slides %}
-                <figure class="gallery-slide">
+                <figure class="gallery-slide" data-slide-type="{{ slide.slide_type }}">
+                    {% if slide.slide_type == 'video' and slide.video %}
+                    <video src="{{ slide.video.url }}" class="w-full h-full object-cover" muted playsinline preload="auto"{% if slide.image %} poster="{{ slide.image.url }}"{% endif %}></video>
+                    {% else %}
                     <img src="{{ slide.image.url }}" alt="{{ slide.alt_text }}" class="w-full h-full object-cover">
+                    {% endif %}
                 </figure>
                 {% endfor %}
             </div>
@@ -161,6 +165,18 @@
             <button class="gallery-control next" aria-label="Next slide">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+
+            <!-- Mute/Unmute (hidden by default, shown for video slides) -->
+            <button class="gallery-mute-btn hidden" aria-label="Toggle sound">
+                <svg class="icon-muted w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/>
+                </svg>
+                <svg class="icon-unmuted w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072M18.364 5.636a9 9 0 010 12.728"/>
                 </svg>
             </button>
 

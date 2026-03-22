@@ -156,18 +156,35 @@ document.addEventListener('DOMContentLoaded', () => {
     const dotsContainer = slider.querySelector('.gallery-dots');
     const prevBtn = slider.querySelector('.gallery-control.prev');
     const nextBtn = slider.querySelector('.gallery-control.next');
+    const muteBtn = slider.querySelector('.gallery-mute-btn');
+    const iconMuted = muteBtn?.querySelector('.icon-muted');
+    const iconUnmuted = muteBtn?.querySelector('.icon-unmuted');
 
     if (!slides.length) return;
 
     let currentIndex = 0;
     const totalSlides = slides.length;
     let autoPlayInterval;
+    let videoPaused = false; // true when waiting for video to finish
+    let isMuted = true; // all videos start muted (browser autoplay policy)
 
     // Инициализация: добавляем индексы и генерируем dots
     const init = () => {
         slides.forEach((slide, i) => {
             slide.dataset.index = i;
             if (i === 0) slide.classList.add('active');
+
+            // When a video ends, resume autoplay and go to next slide
+            const video = slide.querySelector('video');
+            if (video) {
+                video.addEventListener('ended', () => {
+                    if (parseInt(slide.dataset.index) === currentIndex) {
+                        videoPaused = false;
+                        nextSlide();
+                        startAutoPlay();
+                    }
+                });
+            }
         });
 
         titles.forEach((title, i) => {
@@ -192,9 +209,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
+    // Safely play video — handles browsers that return a promise
+    const playVideo = (video) => {
+        const tryPlay = () => {
+            const p = video.play();
+            if (p !== undefined) {
+                p.catch(() => {
+                    // Browser blocked autoplay — ensure muted and retry once
+                    video.muted = true;
+                    isMuted = true;
+                    video.play().catch(() => {});
+                    updateMuteBtn(true);
+                });
+            }
+        };
+
+        // If video is ready, play immediately; otherwise wait
+        if (video.readyState >= 3) {
+            tryPlay();
+        } else {
+            video.addEventListener('canplay', () => tryPlay(), { once: true });
+            video.load(); // trigger loading if needed
+        }
+    };
+
+    const stopCurrentVideo = () => {
+        const activeSlide = slides[currentIndex];
+        const video = activeSlide?.querySelector('video');
+        if (video) {
+            video.pause();
+            video.currentTime = 0;
+        }
+        videoPaused = false;
+    };
+
     const goToSlide = (index) => {
         if (index < 0) index = totalSlides - 1;
         if (index >= totalSlides) index = 0;
+
+        // Stop video on the slide we're leaving
+        stopCurrentVideo();
 
         slides.forEach(slide => slide.classList.remove('active'));
         slides[index].classList.add('active');
@@ -207,7 +261,50 @@ document.addEventListener('DOMContentLoaded', () => {
         if (dots[index]) dots[index].classList.add('active');
 
         currentIndex = index;
+
+        // If this slide is a video, play it and pause autoplay
+        const newSlide = slides[index];
+        const isVideo = newSlide.dataset.slideType === 'video';
+        if (isVideo) {
+            const video = newSlide.querySelector('video');
+            if (video) {
+                clearInterval(autoPlayInterval);
+                videoPaused = true;
+                video.muted = isMuted;
+                video.currentTime = 0;
+                playVideo(video);
+            }
+        }
+
+        // Show/hide mute button
+        updateMuteBtn(isVideo);
     };
+
+    const updateMuteBtn = (show) => {
+        if (!muteBtn) return;
+        if (show) {
+            muteBtn.classList.remove('hidden');
+            iconMuted.classList.toggle('hidden', !isMuted);
+            iconUnmuted.classList.toggle('hidden', isMuted);
+        } else {
+            muteBtn.classList.add('hidden');
+        }
+    };
+
+    // Mute/unmute toggle
+    muteBtn?.addEventListener('click', (e) => {
+        e.stopPropagation();
+        isMuted = !isMuted;
+
+        // Apply to current video
+        const activeSlide = slides[currentIndex];
+        const video = activeSlide?.querySelector('video');
+        if (video) video.muted = isMuted;
+
+        // Update icon
+        iconMuted.classList.toggle('hidden', !isMuted);
+        iconUnmuted.classList.toggle('hidden', isMuted);
+    });
 
     const nextSlide = () => goToSlide(currentIndex + 1);
     const prevSlide = () => goToSlide(currentIndex - 1);
@@ -225,12 +322,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Auto-play
     const startAutoPlay = () => {
-        autoPlayInterval = setInterval(nextSlide, 5000);
+        if (videoPaused) return; // don't start autoplay while video is playing
+        autoPlayInterval = setInterval(() => {
+            if (!videoPaused) nextSlide();
+        }, 5000);
     };
 
     const resetAutoPlay = () => {
         clearInterval(autoPlayInterval);
-        startAutoPlay();
+        if (!videoPaused) startAutoPlay();
     };
 
     // Touch/Swipe
@@ -262,7 +362,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Start
     init();
-    startAutoPlay();
+
+    // If first slide is a video, play it and pause autoplay
+    const firstSlide = slides[0];
+    if (firstSlide?.dataset.slideType === 'video') {
+        const video = firstSlide.querySelector('video');
+        if (video) {
+            videoPaused = true;
+            video.muted = true;
+            playVideo(video);
+            updateMuteBtn(true);
+        }
+    }
+
+    if (!videoPaused) startAutoPlay();
 });
 
 

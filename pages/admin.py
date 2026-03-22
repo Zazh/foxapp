@@ -16,7 +16,7 @@ class HomeBenefitInline(TranslationTabularInline):
 class HomeGallerySlideInline(TranslationTabularInline):
     model = HomeGallerySlide
     extra = 0
-    fields = ('image', 'alt_text', 'caption', 'sort_order')
+    fields = ('slide_type', 'image', 'video', 'alt_text', 'caption', 'sort_order')
 
 
 class HomeDashboardFeatureInline(TranslationTabularInline):

@@ -291,6 +291,13 @@
     @apply bg-white/80;
 }
 
+.gallery-mute-btn {
+    @apply absolute bottom-4 right-4 w-10 h-10
+    bg-black/50 hover:bg-black/70 rounded-full
+    flex items-center justify-center
+    text-white transition-all cursor-pointer z-10;
+}
+
 
 
 .dashboard-section {
