@@ -56,10 +56,17 @@ class TariffDetailView(View):
             ).values_list('policy_id', flat=True)
             required_policies = required_policies.exclude(id__in=accepted_policy_ids)
 
+        # Price range for JSON-LD
+        prices = [p.base_price for p in periods]
+        min_price = min(prices) if prices else 0
+        max_price = max(prices) if prices else 0
+
         return render(request, 'public/content/tariff_detail.html', {
             'service': service,
             'tariff': tariff,
             'periods': periods,
             'addons': addons,
             'required_policies': required_policies,
+            'min_price': min_price,
+            'max_price': max_price,
         })

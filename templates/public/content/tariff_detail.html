@@ -6,6 +6,55 @@
 {% block meta_description %}{{ tariff.name }} — {{ service.name }} in Dubai. {{ tariff.description|striptags|truncatewords:25 }}{% endblock %}
 {% block og_title %}{{ tariff.name }} — {{ service.name }} | FoxBox{% endblock %}
 {% block og_description %}{{ tariff.name }} — {{ service.name }}. {{ tariff.description|striptags|truncatewords:20 }}{% endblock %}
+{% block jsonld %}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Product",
+    "name": "{{ tariff.name }}",
+    "description": "{{ tariff.description|striptags|truncatewords:30 }}",
+    "brand": {
+        "@type": "Brand",
+        "name": "FoxBox"
+    },
+    "category": "{{ service.name }}",
+    {% if tariff.images.first %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ tariff.images.first.image.url }}",{% endif %}
+    "offers": {
+        "@type": "AggregateOffer",
+        "priceCurrency": "AED",
+        "lowPrice": "{{ min_price }}",
+        "highPrice": "{{ max_price }}",
+        "offerCount": "{{ periods|length }}",
+        "availability": "{% if tariff.availability_status == 'fully_booked' %}https://schema.org/SoldOut{% else %}https://schema.org/InStock{% endif %}"
+    }
+}
+</script>
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "{% trans 'Home' %}",
+            "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'home' %}"
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "{{ service.name }}",
+            "item": "{{ request.scheme }}://{{ request.get_host }}{% url 'service_detail' service.service_type %}"
+        },
+        {
+            "@type": "ListItem",
+            "position": 3,
+            "name": "{{ tariff.name }}"
+        }
+    ]
+}
+</script>
+{% endblock %}
 {% block header_class %}default{% endblock %}
 
 {% block stylesheets %}
