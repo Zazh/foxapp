@@ -22,6 +22,9 @@
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"></noscript>
 
+    {# Preload hero background (LCP — loaded from CSS) #}
+    <link rel="preload" href="{% static 'dist/images/bg_wall.webp' %}" as="image" type="image/webp">
+
     {# Preload hero image (LCP) #}
     {% block preload %}{% endblock %}
 
