@@ -37,9 +37,9 @@
             </h1>
         </div>
         <div class="flex justify-center flex-wrap gap-3">
-            <h5 class="text-center font-medium pt-5 pb-5 text-gray-800 leading-tight px-4 w-full">
+            <p class="text-center font-medium pt-5 pb-5 text-gray-800 leading-tight px-4 w-full">
                 {{ page.hero_subtitle|safe }}
-            </h5>
+            </p>
             <ul class="w-full flex flex-col md:flex-row gap-2 md:gap-4 justify-center">
                 <li class="flex justify-center">
                     <a href="{% if page.hero_cta_primary_url %}{{ page.hero_cta_primary_url }}{% else %}{% url 'tariff_detail' 'auto' 'standard' %}{% endif %}" class="[ w-[90%] md:w-[12.5rem] ] text-nowrap btn-default primary lg flex justify-center items-center"><span>{{ page.hero_cta_primary_text }}</span></a>
@@ -115,7 +115,7 @@
                         {% if benefit.svg_icon %}
                         <span>{{ benefit.svg_icon|safe }}</span>
                         {% endif %}
-                        <h5 class="h5">{{ benefit.title }}</h5>
+                        <h3 class="h5">{{ benefit.title }}</h3>
                     </div>
                     <div class="w-full flex items-end">
                         <p class="small text-gray-700">{{ benefit.description }}</p>
