@@ -8,7 +8,7 @@
 {% block twitter_title %}FoxBox — {% trans 'Secure Car Storage in Dubai' %}{% endblock %}
 {% block twitter_description %}{% trans 'Premium car storage in Dubai. Climate-controlled, 24/7 access, CCTV surveillance. Reserve your spot.' %}{% endblock %}
 {% block preload %}
-<link rel="preload" href="{% static 'dist/images/hero-slider/car-1.png' %}" as="image">
+<link rel="preload" href="{% static 'dist/images/hero-slider/car-1.webp' %}" as="image" type="image/webp">
 {% endblock %}
 
 {% block header %}
@@ -78,9 +78,9 @@
         <!-- Car -->
         <div class="car-slider flex justify-center -top-[2.5rem] md:-top-[6.5rem] relative z-20">
             <div class="car-slider-container relative">
-                <img src="{% static 'dist/images/hero-slider/car-1.png' %}" alt="Car 1" class="car-slide active" fetchpriority="high">
-                <img src="{% static 'dist/images/hero-slider/car-3.png' %}" alt="Car 2" class="car-slide" loading="lazy">
-                <img src="{% static 'dist/images/hero-slider/car-2.png' %}" alt="Car 2" class="car-slide" loading="lazy">
+                <img src="{% static 'dist/images/hero-slider/car-1.webp' %}" alt="Car 1" class="car-slide active" fetchpriority="high">
+                <img src="{% static 'dist/images/hero-slider/car-3.webp' %}" alt="Car 2" class="car-slide" loading="lazy">
+                <img src="{% static 'dist/images/hero-slider/car-2.webp' %}" alt="Car 2" class="car-slide" loading="lazy">
             </div>
         </div>
         <!-- Car -->
@@ -266,7 +266,7 @@
 
                 <!-- Mobile screens -->
                 <div class="flex justify-center w-full absolute top-[0.5rem] lg:top-[5rem]">
-                    <img class="w-full md:w-md" src="{% static 'dist/images/mobile_mock.png' %}" alt="FoxBox mobile app" loading="lazy">
+                    <img class="w-full md:w-md" src="{% static 'dist/images/mobile_mock.webp' %}" alt="FoxBox mobile app" loading="lazy">
                 </div>
                 <!-- Mobile screens -->
             </div>
