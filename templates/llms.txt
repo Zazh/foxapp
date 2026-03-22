@@ -1,0 +1,35 @@
+# FoxBox
+
+> Premium car storage facility in Dubai
+
+FoxBox provides secure, professionally managed indoor storage for vehicles. Designed for owners who value protection, privacy, and peace of mind.
+
+## Services
+
+- **Auto Storage**: Secure indoor parking for cars, motorcycles, and other vehicles
+- **Storage**: General storage units for personal and business use
+
+## Features
+
+- 24/7 access options
+- Climate-controlled facility
+- CCTV surveillance
+- Flexible booking periods (weekly, monthly, quarterly, yearly)
+- Online booking and payment
+- Personal dashboard for managing bookings
+- QR-code based visit access system
+- Transparent pricing with no hidden fees
+
+## Location
+
+Dubai, United Arab Emirates
+
+## Contact
+
+- Website: https://foxbox.ae
+- About: https://foxbox.ae/about/
+- Contacts: https://foxbox.ae/contacts/
+
+## Languages
+
+Available in English, Russian, and Arabic.

@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /cabinet/
+Disallow: /backoffice/
+Disallow: /auth/
+Disallow: /login/
+Disallow: /register/
+Disallow: /booking/
+Disallow: /visit/
+Disallow: /feedback/
+Disallow: /webhooks/
+
+Sitemap: https://foxbox.ae/sitemap.xml

@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.contrib.sitemaps.views import sitemap
 from django.urls import path, include
 from django.views.generic import TemplateView
 from django.conf.urls.i18n import i18n_patterns
@@ -8,6 +9,14 @@ from django.conf.urls.static import static
 
 from accounts.views import telegram_webhook
 from pages.views import HomePageView, AboutPageView, ContactsPageView
+from core.sitemaps import StaticSitemap, ServiceSitemap, TariffSitemap, PolicySitemap
+
+sitemaps = {
+    'static': StaticSitemap,
+    'services': ServiceSitemap,
+    'tariffs': TariffSitemap,
+    'policies': PolicySitemap,
+}
 
 
 # Защищённый TemplateView
@@ -19,7 +28,9 @@ class ProtectedTemplateView(LoginRequiredMixin, TemplateView):
 urlpatterns = [
     path('i18n/', include('django.conf.urls.i18n')),
     path('webhooks/telegram/', telegram_webhook, name='telegram_webhook_global'),
-
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain')),
+    path('llms.txt', TemplateView.as_view(template_name='llms.txt', content_type='text/plain')),
 ]
 
 # URL с языковым префиксом
