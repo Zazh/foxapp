@@ -34,11 +34,26 @@ def register_view(request):
             user.language = request.LANGUAGE_CODE
             user.save(update_fields=['language'])
 
-            # Отправить письмо верификации
-            send_verification_email(request, user)
-
-            # Сразу логиним пользователя (без подтверждения email)
+            # ВАЖНО: логиним юзера ДО отправки письма. Если SMTP упадёт
+            # (Mail.ru down, креды протухли и т.п.), то с прошлой версией
+            # send_verification_email бросал исключение прямо в request,
+            # юзер получал 500, а в БД оставалась наполовину оформленная
+            # запись, которая блокировала повторную регистрацию по тому
+            # же email. Теперь юзер гарантированно залогинен.
             login(request, user)
+
+            try:
+                send_verification_email(request, user)
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).error(
+                    "Verification email failed for %s: %s", user.email, e
+                )
+                messages.warning(
+                    request,
+                    _('We could not send the verification email right now. '
+                      'You can request a new one from your account settings.'),
+                )
 
             # Redirect на next если есть, иначе на register_done
             next_url = request.POST.get('next', '')

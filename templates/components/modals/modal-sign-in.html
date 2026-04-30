@@ -21,7 +21,7 @@
     </div>
     <div class="modal-body px-4 md:px-6 flex flex-col gap-4">
       <!-- Google -->
-        <a href="{% url 'google_login' %}" class="btn-google-login bg-black hover:bg-orange-500 py-4 text-white font-bold rounded-lg justify-center w-full flex items-center gap-3">
+        <a href="{% url 'google_login' %}?next={{ next|default:request.get_full_path|urlencode }}" class="btn-google-login bg-black hover:bg-orange-500 py-4 text-white font-bold rounded-lg justify-center w-full flex items-center gap-3">
             <svg width="20" height="20" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -48,7 +48,7 @@
       </div>
 
       <!-- Email link -->
-      <a href="{% url 'login' %}" class="btn-email-login bg-white hover:bg-orange-500 hover:text-white py-4 text-black rounded-lg font-bold border-1 border-gray-100 hover:border-orange-500 justify-center w-full flex items-center gap-2">
+      <a href="{% url 'login' %}?next={{ next|default:request.get_full_path|urlencode }}" class="btn-email-login bg-white hover:bg-orange-500 hover:text-white py-4 text-black rounded-lg font-bold border-1 border-gray-100 hover:border-orange-500 justify-center w-full flex items-center gap-2">
         <span class="mt-[2px] text-sm">Continue with Email</span>
       </a>
     </div>
