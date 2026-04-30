@@ -26,6 +26,14 @@ def is_stripe_configured():
 class BookingCreateView(LoginRequiredMixin, View):
     """Создание бронирования и редирект на Stripe"""
 
+    def get(self, request, service_type, slug):
+        # Только POST имеет смысл (создание брони с параметрами формы),
+        # но юзер мог попасть сюда GET-ом: после логина с
+        # ?next=/booking/.../book/ Django делает GET на next, либо
+        # юзер открыл закладку. Раньше отдавали 405 Method Not Allowed
+        # с пустой страницей. Кидаем на тариф — там форма с выбором.
+        return redirect('tariff_detail', service_type=service_type, slug=slug)
+
     def post(self, request, service_type, slug):
         # Получить тариф
         service = get_object_or_404(Service, service_type=service_type, is_active=True)

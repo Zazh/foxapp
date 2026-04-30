@@ -395,6 +395,137 @@ class RegisterViewTests(TestCase):
         self.assertEqual(User.objects.filter(email='test@example.com').count(), 1)
 
 
+class ForgotPasswordViewTests(TestCase):
+    def setUp(self):
+        self.url = reverse('forgot_password')
+        self.user = User.objects.create_user(
+            email='reset@example.com',
+            password='Pass123!',
+            first_name='X', last_name='Y',
+            phone='+971500000123', id_card='RST-1',
+        )
+
+    @patch('accounts.views.send_password_reset_email')
+    def test_html_form_success(self, mock_send):
+        response = self.client.post(self.url, {'email': 'reset@example.com'})
+        self.assertRedirects(response, reverse('forgot_password_done'))
+        mock_send.assert_called_once()
+
+    @patch('accounts.views.send_password_reset_email')
+    def test_html_form_does_not_500_when_smtp_fails(self, mock_send):
+        # Главный фикс: Mail.ru down → было бы 500, теперь redirect.
+        mock_send.side_effect = Exception('SMTP down')
+        response = self.client.post(self.url, {'email': 'reset@example.com'})
+        self.assertRedirects(response, reverse('forgot_password_done'))
+
+    @patch('accounts.views.send_password_reset_email')
+    def test_html_form_silent_for_unknown_email(self, mock_send):
+        # По безопасности не палим существование email
+        response = self.client.post(self.url, {'email': 'nobody@example.com'})
+        self.assertRedirects(response, reverse('forgot_password_done'))
+        mock_send.assert_not_called()
+
+    @patch('accounts.views.send_password_reset_email')
+    def test_ajax_json_success(self, mock_send):
+        # AJAX из модалки modal-forgot-password (body=JSON)
+        response = self.client.post(
+            self.url,
+            data='{"email": "reset@example.com"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'success': True})
+        mock_send.assert_called_once()
+
+    @patch('accounts.views.send_password_reset_email')
+    def test_ajax_json_success_when_smtp_fails(self, mock_send):
+        mock_send.side_effect = Exception('SMTP down')
+        response = self.client.post(
+            self.url,
+            data='{"email": "reset@example.com"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {'success': True})
+
+    def test_ajax_json_invalid_email_returns_400(self):
+        response = self.client.post(
+            self.url,
+            data='{"email": "not-an-email"}',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+        body = response.json()
+        self.assertFalse(body['success'])
+        self.assertIn('error', body)
+
+    def test_ajax_garbage_body_returns_400(self):
+        response = self.client.post(
+            self.url,
+            data='this is not json',
+            content_type='application/json',
+        )
+        self.assertEqual(response.status_code, 400)
+
+
+class RegisterFormBlankIdCardTests(TestCase):
+    def test_blank_id_card_rejected(self):
+        from accounts.forms import RegisterForm
+        form = RegisterForm({
+            'first_name': 'A', 'last_name': 'B',
+            'id_card': '   ',  # whitespace only
+            'phone': '+971500000999',
+            'email': 'blank@example.com',
+            'password': 'StrongPass123!',
+            'password_confirm': 'StrongPass123!',
+        })
+        self.assertFalse(form.is_valid())
+        self.assertIn('id_card', form.errors)
+
+
+class BookingCreateGetRedirectTests(TestCase):
+    """GET на /booking/.../book/ должен редиректить на тариф,
+    а не отдавать 405."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email='b@example.com', password='Pass123!',
+            first_name='X', last_name='Y',
+            phone='+971500000456', id_card='B-1',
+        )
+        from services.models import Service, Tariff
+        from locations.models import Location
+        loc = Location.objects.create(
+            name='Loc', street='s', building='b',
+            latitude=25.0, longitude=55.0,
+        )
+        self.service = Service.objects.create(
+            name='Auto', service_type='auto', is_active=True,
+        )
+        self.tariff = Tariff.objects.create(
+            service=self.service, location=loc, name='Std',
+            slug='std', deposit_aed=0, is_active=True,
+        )
+
+    def test_anonymous_get_redirects_to_login(self):
+        response = self.client.get(
+            reverse('booking_create', args=['auto', 'std'])
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(reverse('login'), response['Location'])
+
+    def test_authenticated_get_redirects_to_tariff_page(self):
+        self.client.login(email='b@example.com', password='Pass123!')
+        response = self.client.get(
+            reverse('booking_create', args=['auto', 'std'])
+        )
+        self.assertRedirects(
+            response,
+            reverse('tariff_detail', args=['auto', 'std']),
+            fetch_redirect_response=False,
+        )
+
+
 class LoginViewTests(TestCase):
     def setUp(self):
         self.url = reverse('login')

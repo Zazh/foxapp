@@ -68,7 +68,13 @@ class RegisterForm(forms.Form):
         return email
 
     def clean_id_card(self):
+        # strip — иначе «   » пройдёт required-валидацию Django, и в БД
+        # запишется пустая строка. А поскольку id_card UNIQUE, второй
+        # такой же забьёт IntegrityError на уровне БД (а не понятную
+        # ошибку формы).
         id_card = self.cleaned_data.get('id_card', '').strip()
+        if not id_card:
+            raise forms.ValidationError(_('ID card is required.'))
         if User.objects.filter(id_card=id_card).exists():
             raise forms.ValidationError(_('A user with this ID card already exists.'))
         return id_card

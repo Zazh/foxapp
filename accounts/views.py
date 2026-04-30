@@ -163,12 +163,28 @@ def logout_view(request):
 
 
 def forgot_password_view(request):
-    """Страница запроса сброса пароля"""
+    """Страница запроса сброса пароля.
+
+    Принимает оба формата: обычная HTML-форма (templates/auth/forgot-password.html)
+    и AJAX из модалки modal-forgot-password (body=JSON, ожидает JSON-ответ).
+    Раньше view возвращал только redirect, и AJAX-flow видел «Network error»
+    при любой попытке (response.json() на 302 → exception → catch).
+    """
     if request.user.is_authenticated:
         return redirect('cabinet-dashboard')
 
+    is_json_request = request.content_type == 'application/json'
+
     if request.method == 'POST':
-        form = ForgotPasswordForm(request.POST)
+        if is_json_request:
+            try:
+                payload = json.loads(request.body or b'{}')
+            except json.JSONDecodeError:
+                payload = {}
+            form = ForgotPasswordForm({'email': payload.get('email', '')})
+        else:
+            form = ForgotPasswordForm(request.POST)
+
         if form.is_valid():
             email = form.cleaned_data['email']
             try:
@@ -176,9 +192,25 @@ def forgot_password_view(request):
                 send_password_reset_email(request, user)
             except User.DoesNotExist:
                 pass  # Не раскрываем существует ли email
+            except Exception as e:
+                # SMTP / транспорт упал — не палим юзеру (всё равно
+                # «всегда успех» из соображений безопасности), но
+                # логируем для диагностики.
+                import logging
+                logging.getLogger(__name__).error(
+                    "Password reset email failed for %s: %s", email, e
+                )
 
-            # Всегда редиректим на done (безопасность)
+            if is_json_request:
+                return JsonResponse({'success': True})
             return redirect('forgot_password_done')
+
+        # Форма невалидна (плохой email и т.п.)
+        if is_json_request:
+            return JsonResponse(
+                {'success': False, 'error': str(form.errors.get('email', ['Invalid email'])[0])},
+                status=400,
+            )
     else:
         form = ForgotPasswordForm()
 
