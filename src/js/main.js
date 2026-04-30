@@ -754,7 +754,17 @@ document.addEventListener('DOMContentLoaded', () => {
         if (pendingBookingStr) {
             const data = JSON.parse(pendingBookingStr);
 
-            if (!data.period) {
+            // Backward compat: старый формат (period+addons) и новый (fields)
+            const fields = data.fields || (
+                data.period
+                    ? [
+                        ['period', data.period],
+                        ...(data.addons || []).map(a => ['addons', a]),
+                    ]
+                    : null
+            );
+
+            if (!fields) {
                 sessionStorage.removeItem('pendingBooking');
                 return;
             }
@@ -778,21 +788,13 @@ document.addEventListener('DOMContentLoaded', () => {
             csrf.setAttribute('value', csrfToken);
             form.appendChild(csrf);
 
-            const period = document.createElement('input');
-            period.setAttribute('type', 'hidden');
-            period.setAttribute('name', 'period');
-            period.setAttribute('value', data.period);
-            form.appendChild(period);
-
-            if (data.addons && data.addons.length > 0) {
-                data.addons.forEach(addonId => {
-                    const input = document.createElement('input');
-                    input.setAttribute('type', 'hidden');
-                    input.setAttribute('name', 'addons');
-                    input.setAttribute('value', addonId);
-                    form.appendChild(input);
-                });
-            }
+            fields.forEach(([name, value]) => {
+                const input = document.createElement('input');
+                input.setAttribute('type', 'hidden');
+                input.setAttribute('name', name);
+                input.setAttribute('value', value);
+                form.appendChild(input);
+            });
 
             document.body.appendChild(form);
             form.submit();
@@ -812,16 +814,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!isAuth) {
             e.preventDefault();
 
-            const periodValue = selectedPeriod.value;
-            const addonValues = [];
-            document.querySelectorAll('input[name="addons"]:checked').forEach(input => {
-                addonValues.push(input.value);
-            });
+            // Снимаем ВСЕ поля формы (period, addons, accepted_policies,
+            // quantity, любые скрытые поля), кроме CSRF — он у новой
+            // сессии после регистрации/логина будет другой, его берём
+            // свежий из cookie на момент пересабмита.
+            const formData = new FormData(bookingForm);
+            const fields = [];
+            for (const [name, value] of formData.entries()) {
+                if (name === 'csrfmiddlewaretoken') continue;
+                fields.push([name, value]);
+            }
 
             sessionStorage.setItem('pendingBooking', JSON.stringify({
                 url: bookingForm.action,
-                period: periodValue,
-                addons: addonValues
+                fields: fields,
             }));
 
             const nextUrl = encodeURIComponent(window.location.pathname);
