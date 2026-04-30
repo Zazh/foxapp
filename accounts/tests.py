@@ -300,12 +300,43 @@ class RegisterViewTests(TestCase):
         }
 
     @patch('accounts.views.send_verification_email')
-    def test_successful_registration_logs_user_in(self, mock_send):
+    def test_successful_registration_logs_user_in_and_redirects_to_cabinet(
+        self, mock_send
+    ):
         response = self.client.post(self.url, self.valid_data)
+        # Раньше редирект шёл на /register/done/ с пугающим текстом
+        # «Click the link to activate your account» — юзеры думали,
+        # что регистрация не сработала. Теперь сразу в кабинет.
         self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], reverse('cabinet-dashboard'))
+
         user = User.objects.get(email='test@example.com')
         self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
         mock_send.assert_called_once()
+
+        msgs = list(get_messages(response.wsgi_request))
+        self.assertTrue(
+            any(m.level_tag == 'success' for m in msgs),
+            f'Expected success message, got: {[(m.level_tag, str(m.message)) for m in msgs]}',
+        )
+
+    def test_register_done_url_redirects_anonymous_to_login(self):
+        response = self.client.get(reverse('register_done'))
+        self.assertRedirects(response, reverse('login'))
+
+    def test_register_done_url_redirects_authenticated_to_cabinet(self):
+        User.objects.create_user(
+            email='already@example.com',
+            password='SomePass123!',
+            first_name='X', last_name='Y',
+            phone='+971500000099', id_card='RD-001',
+        )
+        self.client.login(email='already@example.com', password='SomePass123!')
+        response = self.client.get(reverse('register_done'))
+        self.assertRedirects(
+            response, reverse('cabinet-dashboard'),
+            fetch_redirect_response=False,
+        )
 
     @patch('accounts.views.send_verification_email')
     def test_registration_succeeds_when_email_send_fails(self, mock_send):
@@ -323,6 +354,9 @@ class RegisterViewTests(TestCase):
         self.assertEqual(int(self.client.session['_auth_user_id']), user.pk)
         # Редирект (не 500)
         self.assertEqual(response.status_code, 302)
+
+        # Редирект в кабинет, а не на 500
+        self.assertEqual(response['Location'], reverse('cabinet-dashboard'))
 
         # И есть warning-сообщение
         msgs = list(get_messages(response.wsgi_request))

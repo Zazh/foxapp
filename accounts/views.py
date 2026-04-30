@@ -44,6 +44,12 @@ def register_view(request):
 
             try:
                 send_verification_email(request, user)
+                messages.success(
+                    request,
+                    _('Welcome! Your account is ready. '
+                      'We sent a verification link to your email — '
+                      'open it when convenient.'),
+                )
             except Exception as e:
                 import logging
                 logging.getLogger(__name__).error(
@@ -51,16 +57,21 @@ def register_view(request):
                 )
                 messages.warning(
                     request,
-                    _('We could not send the verification email right now. '
-                      'You can request a new one from your account settings.'),
+                    _('Welcome! Your account is ready. '
+                      'We could not send the verification email right now — '
+                      'you can request a new one from your account settings.'),
                 )
 
-            # Redirect на next если есть, иначе на register_done
+            # Раньше редиректило на register_done с пугающим текстом
+            # «Check your email — Click the link to activate your account»,
+            # хотя юзер уже залогинен и аккаунт активен. Юзеры путались
+            # и думали, что регистрация не сработала. Шлём прямо в
+            # кабинет — flash-сообщение в шапке кабинета объяснит статус.
             next_url = request.POST.get('next', '')
             if next_url and next_url.startswith('/'):
                 return redirect(next_url)
 
-            return redirect('register_done')
+            return redirect('cabinet-dashboard')
     else:
         form = RegisterForm()
 
@@ -71,8 +82,17 @@ def register_view(request):
 
 
 def register_done_view(request):
-    """Страница после регистрации — проверьте почту"""
-    return render(request, 'auth/register-done.html')
+    """Legacy URL.
+
+    Раньше показывал «Check your email to activate» — это путало
+    пользователей, потому что аккаунт активен сразу после регистрации.
+    Сейчас register_view редиректит сразу в кабинет, а этот URL
+    оставлен для backward compatibility (закладки, старые письма):
+    залогиненных шлём в кабинет, остальных — на логин.
+    """
+    if request.user.is_authenticated:
+        return redirect('cabinet-dashboard')
+    return redirect('login')
 
 
 def verify_email_view(request, uidb64, token):
