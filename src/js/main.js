@@ -811,6 +811,28 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Политики проверяем ДО открытия sign-in модалки. Раньше
+        // незалогиненный юзер сабмитил форму без галочки → этот
+        // handler сразу сохранял pendingBooking и показывал sign-in,
+        // юзер регистрировался, JS пересабмитил форму без
+        // accepted_policies, бэкенд молча редиректил на тариф —
+        // выглядело как «ничего не работает». Блокируем здесь.
+        const policyCheckboxes = bookingForm.querySelectorAll('.policy-checkbox');
+        if (policyCheckboxes.length > 0) {
+            const allChecked = Array.from(policyCheckboxes).every(cb => cb.checked);
+            if (!allChecked) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                const errorMsg = document.getElementById('policies-error');
+                if (errorMsg) errorMsg.classList.remove('hidden');
+                document.getElementById('policies-section')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                });
+                return;
+            }
+        }
+
         if (!isAuth) {
             e.preventDefault();
 
@@ -1002,7 +1024,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (checkboxes.length === 0) return;
 
     const errorMsg = document.getElementById('policies-error');
+    const continueBtn = document.getElementById('btn-continue');
 
+    const updateState = () => {
+        const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+        if (continueBtn) {
+            continueBtn.disabled = !allChecked;
+            continueBtn.classList.toggle('opacity-50', !allChecked);
+            continueBtn.classList.toggle('cursor-not-allowed', !allChecked);
+        }
+        if (allChecked && errorMsg) {
+            errorMsg.classList.add('hidden');
+        }
+    };
+
+    // Кнопка disabled при загрузке, если хотя бы одна галочка не стоит.
+    updateState();
+
+    // Defense-in-depth: даже если юзер обошёл disabled через DevTools,
+    // submit handler в booking form тоже валидирует policies. Здесь
+    // дублируем чтобы перехватить любые формы где booking handler
+    // не подключён.
     bookingForm.addEventListener('submit', (e) => {
         const allChecked = Array.from(checkboxes).every(cb => cb.checked);
         if (!allChecked) {
@@ -1012,14 +1054,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    checkboxes.forEach(cb => {
-        cb.addEventListener('change', () => {
-            const allChecked = Array.from(checkboxes).every(c => c.checked);
-            if (allChecked && errorMsg) {
-                errorMsg.classList.add('hidden');
-            }
-        });
-    });
+    checkboxes.forEach(cb => cb.addEventListener('change', updateState));
 });
 
 
