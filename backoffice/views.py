@@ -794,7 +794,7 @@ class UnitDetailView(DetailView):
 
 @staff_member_required
 def unit_toggle_status(request, pk):
-    """Переключить статус ячейки (активна/неактивна)"""
+    """Переключить статус ячейки (активна/неактивна)."""
     if request.method == 'POST':
         unit = get_object_or_404(StorageUnit, pk=pk)
         action = request.POST.get('action')
@@ -806,9 +806,24 @@ def unit_toggle_status(request, pk):
             unit.is_active = True
             unit.save(update_fields=['is_active'])
         elif action == 'release':
-            # Освободить ячейку (осторожно!)
-            unit.is_available = True
-            unit.save(update_fields=['is_available'])
+            # Освобождение юнита должно идти через бронирование, а не флипать
+            # is_available мимо неё. Раньше тут стоял прямой UPDATE — он создавал
+            # рассинхрон: юнит свободен, но PAID-бронь остаётся живой.
+            # Сейчас находим активные PAID-брони на юните и закрываем их через
+            # complete() — это и юнит освободит, и статус брони переведёт.
+            paid_bookings = Booking.objects.filter(
+                storage_unit=unit,
+                status=Booking.Status.PAID,
+                parent_booking__isnull=True,
+            )
+            for booking in paid_bookings:
+                booking.complete()
+
+            # Подчистка orphan-флага: если PAID-броней нет, но is_available=False
+            # (наследие до фикса), приводим юнит в consistent state.
+            if not paid_bookings.exists():
+                unit.is_available = True
+                unit.save(update_fields=['is_available'])
 
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({'success': True})

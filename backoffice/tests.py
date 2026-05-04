@@ -398,6 +398,96 @@ class BackofficeApiTest(ManagerFlowTestMixin, TestCase):
         self.assertNotEqual(resp.status_code, 200)
 
 
+class UnitReleaseActionTest(ManagerFlowTestMixin, TestCase):
+    """Action 'release' в unit_toggle_status должен идти через booking.complete()."""
+
+    def setUp(self):
+        self.create_base()
+        self.customer = User.objects.create_user(
+            email='cust2@example.com', password='p123456789',
+            first_name='C', last_name='Two',
+        )
+
+    def _release(self, unit_pk):
+        return self.client.post(
+            reverse('backoffice:unit_toggle', args=[unit_pk]),
+            {'action': 'release'},
+        )
+
+    def _create_paid_booking_on_unit(self, unit):
+        booking = Booking.objects.create(
+            user=self.customer,
+            tariff=self.tariff,
+            period=self.period,
+            start_date=timezone.now().date(),
+            quantity=1,
+            unit_price_aed=Decimal('500.00'),
+            price_aed=Decimal('500.00'),
+            addons_aed=Decimal('0'),
+            deposit_aed=Decimal('0'),
+            total_aed=Decimal('500.00'),
+            payment_method=Booking.PaymentMethod.CASH,
+        )
+        booking.activate_externally_paid(Decimal('500.00'), storage_unit=unit)
+        booking.refresh_from_db()
+        return booking
+
+    def test_release_completes_active_booking(self):
+        """Release с PAID-бронью → complete() и юнит свободен."""
+        unit = self.units[0]
+        booking = self._create_paid_booking_on_unit(unit)
+        self.assertEqual(booking.status, Booking.Status.PAID)
+
+        resp = self._release(unit.pk)
+        self.assertEqual(resp.status_code, 302)
+
+        booking.refresh_from_db()
+        unit.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.COMPLETED)
+        self.assertTrue(unit.is_available)
+
+    def test_release_orphan_flag_without_booking(self):
+        """Release на юните is_available=False без PAID-брони — просто чистит флаг."""
+        unit = self.units[0]
+        unit.is_available = False
+        unit.save(update_fields=['is_available'])
+
+        resp = self._release(unit.pk)
+        self.assertEqual(resp.status_code, 302)
+
+        unit.refresh_from_db()
+        self.assertTrue(unit.is_available)
+
+    def test_release_does_not_touch_extension(self):
+        """Если на юните висит parent + extension PENDING, release завершит parent (extension не трогаем — это PENDING)."""
+        unit = self.units[0]
+        parent = self._create_paid_booking_on_unit(unit)
+
+        # PENDING extension
+        ext = Booking.objects.create(
+            user=self.customer,
+            tariff=self.tariff,
+            period=self.period,
+            storage_unit=unit,
+            start_date=parent.end_date,
+            end_date=parent.end_date + timedelta(days=30),
+            quantity=1,
+            unit_price_aed=Decimal('500.00'),
+            price_aed=Decimal('500.00'),
+            addons_aed=Decimal('0'),
+            deposit_aed=Decimal('0'),
+            total_aed=Decimal('500.00'),
+            parent_booking=parent,
+        )
+
+        self._release(unit.pk)
+        parent.refresh_from_db()
+        ext.refresh_from_db()
+        self.assertEqual(parent.status, Booking.Status.COMPLETED)
+        # Extension остаётся PENDING — release не должен его кантовать
+        self.assertEqual(ext.status, Booking.Status.PENDING)
+
+
 class ManagerSetPasswordTest(ManagerFlowTestMixin, TestCase):
     """Менеджер сбрасывает пароль клиента из бэкофиса."""
 
