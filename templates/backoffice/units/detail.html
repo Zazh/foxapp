@@ -68,7 +68,7 @@
             {% if current_booking.is_overdue %}
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
                 <p class="text-red-800 font-medium">Booking expired on {{ current_booking.end_date|date:"d M Y" }}</p>
-                <p class="text-red-600 text-sm">Unit is not released yet. Use Early Release in Actions.</p>
+                <p class="text-red-600 text-sm">Unit is not released yet. Use Release Unit in Actions.</p>
             </div>
             {% endif %}
             
@@ -272,7 +272,7 @@
                       onsubmit="return confirm('Release unit {{ unit.full_code }}? Make sure it is empty.');">
                     {% csrf_token %}
                     <button type="submit" class="w-full px-4 py-2 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 text-sm">
-                        Early Release
+                        Release Unit
                     </button>
                 </form>
 
