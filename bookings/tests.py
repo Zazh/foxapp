@@ -843,6 +843,91 @@ class BookingLifecycleTest(BookingTestMixin, TestCase):
         self.assertEqual(parent.status, Booking.Status.PAID)
 
 
+class ReassignUnitTest(BookingTestMixin, TestCase):
+    """Tests for Booking.reassign_unit — moving booking between units."""
+
+    def setUp(self):
+        self.create_base_objects()
+
+    def test_reassign_swaps_units_and_keeps_state_consistent(self):
+        booking = self.create_booking()
+        booking.mark_as_paid('pi')
+        booking.refresh_from_db()
+        old_unit = booking.storage_unit
+        new_unit = next(u for u in self.units if u.is_available and u != old_unit)
+
+        booking.reassign_unit(old_unit, new_unit)
+        booking.refresh_from_db()
+        old_unit.refresh_from_db()
+        new_unit.refresh_from_db()
+
+        self.assertEqual(booking.storage_unit_id, new_unit.pk)
+        self.assertTrue(old_unit.is_available)
+        self.assertFalse(new_unit.is_available)
+        self.assertIn(new_unit.full_code, booking.unit_codes)
+        self.assertNotIn(old_unit.full_code, booking.unit_codes)
+        # BookingUnit perепривязан
+        self.assertTrue(booking.booking_units.filter(storage_unit=new_unit).exists())
+        self.assertFalse(booking.booking_units.filter(storage_unit=old_unit).exists())
+
+    def test_reassign_rejects_non_paid_booking(self):
+        booking = self.create_booking()
+        booking.mark_as_paid('pi')
+        booking.refresh_from_db()
+        old_unit = booking.storage_unit
+        new_unit = next(u for u in self.units if u.is_available and u != old_unit)
+        booking.cancel()
+
+        with self.assertRaises(ValueError):
+            booking.reassign_unit(old_unit, new_unit)
+
+    def test_reassign_rejects_unavailable_target(self):
+        booking_a = self.create_booking()
+        booking_a.mark_as_paid('a')
+        booking_a.refresh_from_db()
+        booking_b = self.create_booking()
+        booking_b.mark_as_paid('b')
+        booking_b.refresh_from_db()
+        # Try to move A to B's unit — занят
+        with self.assertRaises(ValueError):
+            booking_a.reassign_unit(booking_a.storage_unit, booking_b.storage_unit)
+
+    def test_reassign_atomic_rolls_back_on_failure(self):
+        """Если что-то упадёт после release old, БД откатится — old остаётся занятым."""
+        from unittest.mock import patch
+
+        booking = self.create_booking()
+        booking.mark_as_paid('pi')
+        booking.refresh_from_db()
+        old_unit = booking.storage_unit
+        new_unit = next(u for u in self.units if u.is_available and u != old_unit)
+
+        # Прервём операцию ровно после first save (release old, before occupy new)
+        from services.models import StorageUnit as SU
+        original_save = SU.save
+        call_count = [0]
+
+        def flaky_save(self, *args, **kwargs):
+            call_count[0] += 1
+            # Первый save — release old (is_available=True). Второй — occupy new.
+            # На втором падаем.
+            if call_count[0] == 2:
+                raise RuntimeError('simulated DB failure')
+            return original_save(self, *args, **kwargs)
+
+        with patch.object(SU, 'save', flaky_save):
+            with self.assertRaises(RuntimeError):
+                booking.reassign_unit(old_unit, new_unit)
+
+        # После отката old должен остаться занят, new — свободен, booking unchanged
+        old_unit.refresh_from_db()
+        new_unit.refresh_from_db()
+        booking.refresh_from_db()
+        self.assertFalse(old_unit.is_available)  # rolled back
+        self.assertTrue(new_unit.is_available)
+        self.assertEqual(booking.storage_unit_id, old_unit.pk)
+
+
 class DisplayStatusTest(BookingTestMixin, TestCase):
     """Tests for derivable display_status property and active/overdue helpers."""
 

@@ -608,11 +608,15 @@ class Booking(models.Model):
         self.status = self.Status.CANCELLED
         self.save(update_fields=['status', 'updated_at'])
 
+    @transaction.atomic
     def reassign_unit(self, old_unit, new_unit):
         """Переселить бронирование с одного юнита на другой.
 
         Освобождает old_unit, занимает new_unit, обновляет BookingUnit,
         storage_unit (primary) и снепшот unit_codes.
+
+        Атомарно: при ошибке между release old и occupy new откатится всё —
+        не оставит юниты в inconsistent state.
         """
         if self.status != self.Status.PAID:
             raise ValueError(f'Cannot reassign unit for booking in status {self.status}')
