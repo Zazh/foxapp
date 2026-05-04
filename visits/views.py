@@ -23,7 +23,7 @@ class GenerateQRTokenView(LoginRequiredMixin, View):
             Booking,
             pk=booking_id,
             user=request.user,
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE]
+            status=Booking.Status.PAID
         )
 
         if not booking.storage_unit:
@@ -73,7 +73,7 @@ class GenerateGuestTokenView(LoginRequiredMixin, View):
             Booking,
             pk=booking_id,
             user=request.user,
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE]
+            status=Booking.Status.PAID
         )
 
         if not booking.storage_unit:

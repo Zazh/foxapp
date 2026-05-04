@@ -65,7 +65,7 @@
                 <a href="{% url 'backoffice:user_detail' current_booking.user.pk %}" class="text-blue-600 hover:underline text-sm">View profile →</a>
             </div>
 
-            {% if current_booking.status == 'expired' %}
+            {% if current_booking.is_overdue %}
             <div class="bg-red-50 border border-red-200 rounded-lg p-4 mt-4">
                 <p class="text-red-800 font-medium">Booking expired on {{ current_booking.end_date|date:"d M Y" }}</p>
                 <p class="text-red-600 text-sm">Unit is not released yet. Use Early Release in Actions.</p>
@@ -75,7 +75,7 @@
             <dl class="grid grid-cols-2 gap-4">
                 <div>
                     <dt class="text-sm text-gray-500">Booking ID</dt>
-                    <dd><a href="{% url 'backoffice:booking_detail' current_booking.pk %}" class="text-blue-600 hover:underline font-medium">#{{ current_booking.pk }}</a></dd>
+                    <dd><a href="{% url 'backoffice:booking_detail' current_booking.pk %}" class="text-blue-600 hover:underline font-medium">#{{ current_booking.number }}</a></dd>
                 </div>
                 <div>
                     <dt class="text-sm text-gray-500">Tariff</dt>
@@ -97,11 +97,13 @@
                 <div>
                     <dt class="text-sm text-gray-500">Status</dt>
                     <dd>
-                        <span class="inline-flex px-2 py-1 text-xs rounded-full 
-                            {% if current_booking.status == 'paid' or current_booking.status == 'active' %}bg-green-100 text-green-800
-                            {% elif current_booking.status == 'pending' %}bg-yellow-100 text-yellow-800
+                        <span class="inline-flex px-2 py-1 text-xs rounded-full
+                            {% if current_booking.display_status == 'active' %}bg-green-100 text-green-800
+                            {% elif current_booking.display_status == 'paid' %}bg-blue-100 text-blue-800
+                            {% elif current_booking.display_status == 'overdue' %}bg-red-100 text-red-800
+                            {% elif current_booking.display_status == 'pending' %}bg-yellow-100 text-yellow-800
                             {% else %}bg-gray-100 text-gray-800{% endif %}">
-                            {{ current_booking.get_status_display }}
+                            {{ current_booking.display_status_label }}
                         </span>
                     </dd>
                 </div>
@@ -214,17 +216,19 @@
                     {% for booking in booking_history %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4">
-                            <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline">#{{ booking.pk }}</a>
+                            <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline">#{{ booking.number }}</a>
                         </td>
                         <td class="px-6 py-4 text-sm">{{ booking.user.email }}</td>
                         <td class="px-6 py-4 text-sm">{{ booking.start_date|date:"d M Y" }} → {{ booking.end_date|date:"d M Y" }}</td>
                         <td class="px-6 py-4">
-                            <span class="inline-flex px-2 py-1 text-xs rounded-full 
-                                {% if booking.status == 'paid' or booking.status == 'active' %}bg-green-100 text-green-800
-                                {% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800
-                                {% elif booking.status == 'cancelled' %}bg-red-100 text-red-800
+                            <span class="inline-flex px-2 py-1 text-xs rounded-full
+                                {% if booking.display_status == 'active' %}bg-green-100 text-green-800
+                                {% elif booking.display_status == 'paid' %}bg-blue-100 text-blue-800
+                                {% elif booking.display_status == 'overdue' %}bg-red-100 text-red-800
+                                {% elif booking.display_status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif booking.display_status == 'cancelled' %}bg-gray-100 text-gray-800
                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ booking.get_status_display }}
+                                {{ booking.display_status_label }}
                             </span>
                         </td>
                     </tr>

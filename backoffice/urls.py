@@ -13,6 +13,7 @@ urlpatterns = [
 
     # Bookings
     path('bookings/', views.BookingListView.as_view(), name='booking_list'),
+    path('bookings/create/', views.ManagerBookingCreateView.as_view(), name='booking_create'),
     path('bookings/<int:pk>/', views.BookingDetailView.as_view(), name='booking_detail'),
     path('bookings/<int:pk>/release/', views.booking_release, name='booking_release'),
     path('bookings/<int:pk>/reassign/', views.booking_reassign_unit, name='booking_reassign'),
@@ -24,8 +25,10 @@ urlpatterns = [
 
     # Users
     path('users/', views.UserListView.as_view(), name='user_list'),
+    path('users/create/', views.ManagerUserCreateView.as_view(), name='user_create'),
     path('users/<int:pk>/', views.UserDetailView.as_view(), name='user_detail'),
     path('users/<int:pk>/update/', views.user_update, name='user_update'),
+    path('users/<int:pk>/set-password/', views.user_set_password, name='user_set_password'),
 
     # Visits
     path('visits/', views.VisitListView.as_view(), name='visit_list'),
@@ -37,4 +40,10 @@ urlpatterns = [
 
     # Scanner
     path('scanner/', views.ScannerView.as_view(), name='scanner'),
+
+    # API (AJAX) for backoffice forms
+    path('api/users/search/', views.api_user_search, name='api_user_search'),
+    path('api/users/create/', views.api_user_create, name='api_user_create'),
+    path('api/users/<int:pk>/active-booking/', views.api_user_active_booking, name='api_user_active_booking'),
+    path('api/tariffs/<int:pk>/', views.api_tariff_info, name='api_tariff_info'),
 ]

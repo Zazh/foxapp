@@ -11,8 +11,8 @@
     </div>
 </div>
 
-<!-- Stats -->
-<div class="grid grid-cols-4 gap-4 mb-6">
+<!-- Stats: top row — counts -->
+<div class="grid grid-cols-4 gap-4 mb-4">
     <div class="bg-white rounded-lg shadow p-4">
         <p class="text-sm text-gray-500">Total Paid</p>
         <p class="text-2xl font-bold text-green-600">{{ stats.total_paid }}</p>
@@ -28,6 +28,22 @@
     <div class="bg-white rounded-lg shadow p-4">
         <p class="text-sm text-gray-500">Failed / Cancelled</p>
         <p class="text-2xl font-bold text-red-600">{{ stats.failed }}</p>
+    </div>
+</div>
+
+<!-- Stats: revenue by payment channel -->
+<div class="grid grid-cols-3 gap-4 mb-6">
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-blue-500">
+        <p class="text-sm text-gray-500">Online (Stripe Checkout)</p>
+        <p class="text-xl font-bold text-blue-600">AED {{ stats.revenue_online|floatformat:0 }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-green-500">
+        <p class="text-sm text-gray-500">Cash / Terminal</p>
+        <p class="text-xl font-bold text-green-700">AED {{ stats.revenue_cash|floatformat:0 }}</p>
+    </div>
+    <div class="bg-white rounded-lg shadow p-4 border-l-4 border-purple-500">
+        <p class="text-sm text-gray-500">Stripe Payment Link</p>
+        <p class="text-xl font-bold text-purple-600">AED {{ stats.revenue_link|floatformat:0 }}</p>
     </div>
 </div>
 
@@ -48,8 +64,17 @@
                 <option value="failed" {% if current_status == 'failed' %}selected{% endif %}>Failed / Cancelled</option>
             </select>
         </div>
+        <div class="w-48">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Method</label>
+            <select name="method" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                <option value="">All</option>
+                {% for value, label in payment_methods %}
+                <option value="{{ value }}" {% if current_method == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <button type="submit" class="px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800">Filter</button>
-        {% if search or current_status %}
+        {% if search or current_status or current_method %}
         <a href="{% url 'backoffice:payment_list' %}" class="px-4 py-2 text-gray-600 hover:text-gray-900">Clear</a>
         {% endif %}
     </form>
@@ -65,7 +90,8 @@
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Amount</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Stripe ID</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Method</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Reference</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Receipt</th>
                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
             </tr>
@@ -87,8 +113,10 @@
                     <p class="text-gray-500 text-xs">{{ payment.period_label|default:"-" }}{% if payment.parent_booking %} (Extension){% endif %}</p>
                 </td>
                 <td class="px-6 py-4">
-                    <div class="font-bold">AED {{ payment.total_aed|floatformat:0 }}</div>
-                    {% if payment.deposit_aed %}
+                    <div class="font-bold">AED {{ payment.payment_amount_collected|default:payment.total_aed|floatformat:0 }}</div>
+                    {% if payment.payment_amount_collected and payment.payment_amount_collected != payment.total_aed %}
+                    <div class="text-xs text-gray-400">expected {{ payment.total_aed|floatformat:0 }}</div>
+                    {% elif payment.deposit_aed %}
                     <div class="text-xs text-gray-400">incl. deposit {{ payment.deposit_aed|floatformat:0 }}</div>
                     {% endif %}
                 </td>
@@ -100,12 +128,38 @@
                     {% elif payment.status == 'cancelled' %}
                     <span class="inline-flex px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Failed</span>
                     {% else %}
-                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{{ payment.get_status_display }}</span>
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">{{ payment.display_status_label }}</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm">
+                    {% if payment.payment_method == 'lk_invoice' %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800" title="Online payment via Stripe Checkout in customer cabinet">
+                        Online
+                    </span>
+                    {% elif payment.payment_method == 'cash' %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-green-100 text-green-800" title="Cash or terminal at desk">
+                        Cash
+                    </span>
+                    {% elif payment.payment_method == 'stripe_payment_link' %}
+                    <span class="inline-flex px-2 py-1 text-xs rounded-full bg-purple-100 text-purple-800" title="Stripe Payment Link manually sent by manager">
+                        Stripe Link
+                    </span>
+                    {% else %}
+                    <span class="text-gray-400">—</span>
+                    {% endif %}
+                    {% if payment.created_by_manager %}
+                    <div class="text-xs text-gray-400 mt-1" title="Created by manager">
+                        by {{ payment.created_by_manager.get_short_name }}
+                    </div>
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 text-sm">
                     {% if payment.stripe_payment_id %}
                     <span class="font-mono text-xs text-gray-600">{{ payment.stripe_payment_id|truncatechars:24 }}</span>
+                    {% elif payment.payment_method == 'cash' %}
+                    <span class="text-xs text-gray-500">No external ref</span>
+                    {% elif payment.payment_method == 'stripe_payment_link' and payment.paid_at %}
+                    <span class="text-xs text-gray-500">External Stripe (manager-sent)</span>
                     {% else %}
                     <span class="text-gray-400">—</span>
                     {% endif %}
@@ -142,7 +196,7 @@
             </tr>
             {% empty %}
             <tr>
-                <td colspan="8" class="px-6 py-8 text-center text-gray-500">No payments found</td>
+                <td colspan="9" class="px-6 py-8 text-center text-gray-500">No payments found</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -153,14 +207,14 @@
 {% if page_obj.has_other_pages %}
 <div class="mt-6 flex justify-center gap-2">
     {% if page_obj.has_previous %}
-    <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}"
+    <a href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_method %}&method={{ current_method }}{% endif %}"
        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Previous</a>
     {% endif %}
 
     <span class="px-4 py-2 text-gray-600">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
 
     {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}"
+    <a href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if current_status %}&status={{ current_status }}{% endif %}{% if current_method %}&method={{ current_method }}{% endif %}"
        class="px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">Next</a>
     {% endif %}
 </div>

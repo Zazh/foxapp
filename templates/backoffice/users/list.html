@@ -3,9 +3,15 @@
 {% block title %}Users{% endblock %}
 
 {% block content %}
-<div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-900">Users</h1>
-    <p class="text-gray-600">All registered users</p>
+<div class="mb-8 flex justify-between items-start">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Users</h1>
+        <p class="text-gray-600">All registered users</p>
+    </div>
+    <a href="{% url 'backoffice:user_create' %}"
+       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+        + New customer
+    </a>
 </div>
 
 <!-- Search -->

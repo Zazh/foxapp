@@ -510,7 +510,7 @@ class StorageUnit(models.Model):
 
     @property
     def current_booking(self):
-        """Текущее бронирование (включая expired — машина ещё в ячейке)"""
+        """Текущее бронирование (PAID — включая просроченные, пока юнит не освобождён)."""
         return self.bookings.filter(
-            status__in=['paid', 'active', 'expired']
+            status='paid', parent_booking__isnull=True,
         ).select_related('user').first()

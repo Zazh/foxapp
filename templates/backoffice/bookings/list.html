@@ -4,9 +4,15 @@
 {% block title %}Bookings{% endblock %}
 
 {% block content %}
-<div class="mb-8">
-    <h1 class="text-2xl font-bold text-gray-900">Bookings</h1>
-    <p class="text-gray-600">Active rentals and units requiring attention</p>
+<div class="mb-8 flex justify-between items-start">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">Bookings</h1>
+        <p class="text-gray-600">Active rentals and units requiring attention</p>
+    </div>
+    <a href="{% url 'backoffice:booking_create' %}"
+       class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm">
+        + New booking
+    </a>
 </div>
 
 <!-- Stats -->
@@ -68,9 +74,9 @@
         </thead>
         <tbody class="divide-y divide-gray-200">
             {% for booking in bookings %}
-            <tr class="{% if booking.status == 'expired' %}bg-red-50 hover:bg-red-100{% elif booking.days_remaining <= 7 %}bg-orange-50 hover:bg-orange-100{% elif booking.days_remaining <= 14 %}bg-yellow-50 hover:bg-yellow-100{% else %}hover:bg-gray-50{% endif %}">
+            <tr class="{% if booking.is_overdue %}bg-red-50 hover:bg-red-100{% elif booking.days_remaining <= 7 %}bg-orange-50 hover:bg-orange-100{% elif booking.days_remaining <= 14 %}bg-yellow-50 hover:bg-yellow-100{% else %}hover:bg-gray-50{% endif %}">
                 <td class="px-6 py-4">
-                    <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline font-medium">#{{ booking.pk }}</a>
+                    <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline font-medium">#{{ booking.number }}</a>
                 </td>
                 <td class="px-6 py-4">
                     <a href="{% url 'backoffice:user_detail' booking.user.pk %}" class="hover:underline">
@@ -88,7 +94,7 @@
                     <div class="text-xs text-gray-400">{{ booking.period_label }}</div>
                 </td>
                 <td class="px-6 py-4 text-sm">
-                    {% if booking.status == 'expired' %}
+                    {% if booking.is_overdue %}
                     <span class="text-red-600 font-bold">{{ booking.days_overdue }} days overdue</span>
                     {% elif booking.days_remaining <= 7 %}
                     <span class="text-orange-600 font-bold">{{ booking.days_remaining }}d left</span>
@@ -99,7 +105,7 @@
                     {% endif %}
                 </td>
                 <td class="px-6 py-4">
-                    {% if booking.status == 'expired' %}
+                    {% if booking.is_overdue %}
                     <span class="inline-flex px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Expired</span>
                     {% else %}
                     <span class="inline-flex px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Active</span>

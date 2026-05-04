@@ -74,6 +74,35 @@
             </form>
         </div>
 
+        <!-- Set password -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="font-semibold mb-3">Reset password</h2>
+            <p class="text-xs text-gray-500 mb-3">
+                Set a new password for this customer (e.g. they forgot it). Share with them
+                via WhatsApp or in person.
+            </p>
+            <form id="set-password-form" data-action="{% url 'backoffice:user_set_password' profile_user.pk %}"
+                  class="space-y-3">
+                {% csrf_token %}
+                <div class="flex gap-2">
+                    <input type="text" name="password" id="user-new-password"
+                           placeholder="New password"
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm font-mono">
+                    <button type="button" id="btn-gen-pass"
+                            class="shrink-0 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm"
+                            title="Generate secure password">Generate</button>
+                    <button type="button" id="btn-copy-pass"
+                            class="shrink-0 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm"
+                            title="Copy to clipboard">Copy</button>
+                </div>
+                <p id="set-password-status" class="text-xs hidden"></p>
+                <button type="submit"
+                        class="w-full px-4 py-2 bg-gray-900 text-white rounded-lg hover:bg-gray-800 text-sm font-medium">
+                    Update password
+                </button>
+            </form>
+        </div>
+
         <!-- Info -->
         <div class="bg-white rounded-lg shadow p-6">
             <h2 class="font-semibold mb-3">Account Info</h2>
@@ -142,18 +171,20 @@
                     {% for booking in bookings %}
                     <tr class="hover:bg-gray-50">
                         <td class="px-6 py-4">
-                            <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline">#{{ booking.pk }}</a>
+                            <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline">#{{ booking.number }}</a>
                         </td>
                         <td class="px-6 py-4 text-sm">{{ booking.tariff_name|default:booking.tariff.name }}</td>
                         <td class="px-6 py-4 text-sm font-mono">{{ booking.unit_codes|default:"-" }}</td>
                         <td class="px-6 py-4 text-sm">{{ booking.start_date|date:"d M" }} → {{ booking.end_date|date:"d M Y" }}</td>
                         <td class="px-6 py-4">
                             <span class="inline-flex px-2 py-1 text-xs rounded-full
-                                {% if booking.status == 'paid' or booking.status == 'active' %}bg-green-100 text-green-800
-                                {% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800
-                                {% elif booking.status == 'cancelled' %}bg-red-100 text-red-800
+                                {% if booking.display_status == 'active' %}bg-green-100 text-green-800
+                                {% elif booking.display_status == 'paid' %}bg-blue-100 text-blue-800
+                                {% elif booking.display_status == 'overdue' %}bg-red-100 text-red-800
+                                {% elif booking.display_status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% elif booking.display_status == 'cancelled' %}bg-gray-100 text-gray-800
                                 {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                {{ booking.get_status_display }}
+                                {{ booking.display_status_label }}
                             </span>
                         </td>
                     </tr>
@@ -167,4 +198,68 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    const form = document.getElementById('set-password-form');
+    if (!form) return;
+    const input = document.getElementById('user-new-password');
+    const status = document.getElementById('set-password-status');
+
+    function genPassword(length = 12) {
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+        const arr = new Uint32Array(length);
+        crypto.getRandomValues(arr);
+        return Array.from(arr, x => chars[x % chars.length]).join('');
+    }
+
+    function showStatus(msg, ok) {
+        status.textContent = msg;
+        status.classList.remove('hidden', 'text-red-600', 'text-green-600');
+        status.classList.add(ok ? 'text-green-600' : 'text-red-600');
+    }
+
+    document.getElementById('btn-gen-pass').addEventListener('click', () => {
+        input.value = genPassword();
+        status.classList.add('hidden');
+    });
+
+    document.getElementById('btn-copy-pass').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        if (!input.value) return;
+        try {
+            await navigator.clipboard.writeText(input.value);
+            const original = btn.textContent;
+            btn.textContent = 'Copied ✓';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        } catch (err) {
+            input.select();
+            document.execCommand('copy');
+        }
+    });
+
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!input.value) {
+            showStatus('Enter a password first.', false);
+            return;
+        }
+        const fd = new FormData(form);
+        const resp = await fetch(form.dataset.action, {
+            method: 'POST',
+            body: fd,
+            headers: {
+                'X-CSRFToken': fd.get('csrfmiddlewaretoken'),
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+        const data = await resp.json();
+        if (data.success) {
+            showStatus(data.message + ' Make sure to share it with the customer.', true);
+        } else {
+            showStatus(data.error || 'Failed to update password.', false);
+        }
+    });
+})();
+</script>
 {% endblock %}

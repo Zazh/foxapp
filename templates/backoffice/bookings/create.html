@@ -1,0 +1,675 @@
+{% extends 'backoffice/base.html' %}
+{% load i18n %}
+
+{% block title %}Create booking{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <a href="{% url 'backoffice:booking_list' %}" class="text-blue-600 hover:underline text-sm">← Back to bookings</a>
+    <h1 class="text-2xl font-bold text-gray-900 mt-2">Create booking</h1>
+    <p class="text-gray-600 text-sm">Create a booking on behalf of a customer.</p>
+</div>
+
+<form method="post" id="booking-form" class="bg-white rounded-lg shadow p-6 max-w-2xl space-y-6">
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+        <div class="bg-red-50 border border-red-200 text-red-700 rounded p-3 text-sm">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
+
+    {{ form.user_id }}
+    {{ form.period_type }}
+
+    <!-- 1. Customer -->
+    <section>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Customer</label>
+        <div id="user-search-wrap">
+            <input type="text" id="user-search" autocomplete="off"
+                   placeholder="Search by email, name or phone…"
+                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+            <div id="user-results"
+                 class="hidden mt-1 border border-gray-200 rounded-lg bg-white shadow-sm max-h-60 overflow-y-auto"></div>
+        </div>
+        <div id="selected-user"
+             class="hidden flex items-center justify-between gap-2 px-3 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+            <span id="selected-user-label" class="font-medium truncate"></span>
+            <button type="button" id="btn-clear-user"
+                    class="shrink-0 text-blue-700 hover:text-blue-900 text-lg leading-none px-1"
+                    title="Change customer">×</button>
+        </div>
+        <div class="mt-2">
+            <button type="button" id="btn-open-user-modal"
+                    class="text-sm text-blue-600 hover:underline">+ Create new customer</button>
+        </div>
+        {% if form.user_id.errors %}<p class="text-xs text-red-600 mt-1">{{ form.user_id.errors|striptags }}</p>{% endif %}
+    </section>
+
+    <!-- 2. Tariff -->
+    <section>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.tariff.label }}</label>
+        {{ form.tariff }}
+        {% if active_tariffs_count == 1 %}
+            <div id="tariff-static" class="hidden mt-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700"></div>
+        {% endif %}
+        {% if form.tariff.errors %}<p class="text-xs text-red-600 mt-1">{{ form.tariff.errors|striptags }}</p>{% endif %}
+    </section>
+
+    <!-- 3. Period: tabs -->
+    <section>
+        <label class="block text-sm font-medium text-gray-700 mb-2">Period</label>
+        <div class="flex gap-2 mb-3 border-b border-gray-200">
+            <button type="button" data-tab="standard"
+                    class="period-tab px-4 py-2 text-sm font-medium border-b-2 border-blue-600 text-blue-600">
+                Standard
+            </button>
+            <button type="button" data-tab="custom"
+                    class="period-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-gray-500 hover:text-gray-700">
+                Custom dates
+            </button>
+        </div>
+
+        <!-- Standard tab -->
+        <div id="tab-standard" class="period-pane space-y-3">
+            <div>
+                {{ form.period }}
+                {% if form.period.errors %}<p class="text-xs text-red-600 mt-1">{{ form.period.errors|striptags }}</p>{% endif %}
+            </div>
+        </div>
+
+        <!-- Custom tab -->
+        <div id="tab-custom" class="period-pane hidden space-y-3">
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">Start date</label>
+                    {{ form.custom_start_date }}
+                    {% if form.custom_start_date.errors %}<p class="text-xs text-red-600 mt-1">{{ form.custom_start_date.errors|striptags }}</p>{% endif %}
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">End date</label>
+                    {{ form.custom_end_date }}
+                    {% if form.custom_end_date.errors %}<p class="text-xs text-red-600 mt-1">{{ form.custom_end_date.errors|striptags }}</p>{% endif %}
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 4. Storage unit -->
+    <section>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Storage unit</label>
+        {{ form.storage_unit }}
+        <p id="storage-hint" class="text-xs text-gray-500 mt-1">Leave on auto to take the first free one.</p>
+        <div id="extension-banner"
+             class="hidden mt-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-900">
+            <strong>Extension mode:</strong> selecting the customer's current unit will
+            extend their existing booking instead of creating a new one. Quantity is fixed at 1
+            and no deposit is charged.
+        </div>
+    </section>
+
+    <!-- 5. Payment method -->
+    <section>
+        <label class="block text-sm font-medium text-gray-700 mb-1">{{ form.payment_method.label }}</label>
+        {{ form.payment_method }}
+        <p id="payment-hint" class="text-xs text-gray-500 mt-1"></p>
+    </section>
+
+    <!-- 6. Quantity + Price (last row, side by side) -->
+    <section class="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+        <!-- Quantity (hidden if service has no quantity_label) -->
+        <div id="qty-section" class="hidden">
+            <label class="block text-sm font-medium text-gray-700 mb-1">
+                <span id="qty-label">{{ form.quantity.label }}</span>
+            </label>
+            <div class="flex items-stretch">
+                <button type="button" id="qty-minus"
+                        class="w-9 px-0 border border-gray-300 rounded-l-lg bg-gray-50 hover:bg-gray-100 text-lg font-medium leading-none"
+                        aria-label="Decrease">−</button>
+                {{ form.quantity }}
+                <button type="button" id="qty-plus"
+                        class="w-9 px-0 border border-gray-300 rounded-r-lg bg-gray-50 hover:bg-gray-100 text-lg font-medium leading-none"
+                        aria-label="Increase">+</button>
+            </div>
+            <p id="qty-availability" class="text-xs text-gray-500 mt-1"></p>
+            {% if form.quantity.errors %}<p class="text-xs text-red-600 mt-1">{{ form.quantity.errors|striptags }}</p>{% endif %}
+        </div>
+
+        <!-- Price -->
+        <div id="price-section">
+            <div class="flex items-center justify-between mb-1">
+                <label class="block text-sm font-medium text-gray-700">{{ form.price_aed.label }}</label>
+                <button type="button" id="btn-edit-price"
+                        class="text-xs text-blue-600 hover:underline">Edit price</button>
+            </div>
+            <div style="display: none">{{ form.override_price }}</div>
+            {{ form.price_aed }}
+            <p id="price-hint" class="text-xs text-gray-500 mt-1">{{ form.price_aed.help_text }}</p>
+            {% if form.price_aed.errors %}<p class="text-xs text-red-600 mt-1">{{ form.price_aed.errors|striptags }}</p>{% endif %}
+        </div>
+    </section>
+
+    <div class="flex gap-3 pt-4 border-t border-gray-200">
+        <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            Create booking
+        </button>
+        <a href="{% url 'backoffice:booking_list' %}" class="px-4 py-2 text-gray-600 hover:text-gray-900">Cancel</a>
+    </div>
+</form>
+
+<!-- Modal: create new customer -->
+<div id="user-modal" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
+        <div class="flex justify-between items-center mb-4">
+            <h2 class="text-lg font-bold text-gray-900">Create customer</h2>
+            <button type="button" id="btn-close-user-modal" class="text-gray-400 hover:text-gray-700 text-2xl">×</button>
+        </div>
+        <form id="user-create-form" class="space-y-3">
+            {% csrf_token %}
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Email</label>
+                <input type="email" name="email" required
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                <p data-error="email" class="text-xs text-red-600 mt-1 hidden"></p>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">First name</label>
+                    <input type="text" name="first_name" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                    <p data-error="first_name" class="text-xs text-red-600 mt-1 hidden"></p>
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-600 mb-1">Last name</label>
+                    <input type="text" name="last_name"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Phone</label>
+                <input type="tel" name="phone"
+                       class="w-full px-3 py-2 border border-gray-300 rounded-lg">
+            </div>
+            <div>
+                <label class="block text-xs text-gray-600 mb-1">Password</label>
+                <div class="flex gap-2">
+                    <input type="text" name="password" id="modal-password" required
+                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg font-mono">
+                    <button type="button" id="btn-gen-password"
+                            class="shrink-0 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm"
+                            title="Generate secure password">Generate</button>
+                    <button type="button" id="btn-copy-password"
+                            class="shrink-0 px-3 py-2 bg-gray-100 hover:bg-gray-200 border border-gray-300 rounded-lg text-sm"
+                            title="Copy to clipboard">Copy</button>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Share with customer via WhatsApp / in person.</p>
+                <p data-error="password" class="text-xs text-red-600 mt-1 hidden"></p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    Create & select
+                </button>
+                <button type="button" id="btn-cancel-user-modal" class="px-4 py-2 text-gray-600 hover:text-gray-900">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    #booking-form input[type="text"], #booking-form input[type="email"],
+    #booking-form input[type="number"], #booking-form input[type="date"],
+    #booking-form select {
+        width: 100%;
+        padding: 0.5rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+    }
+    #booking-form input[readonly] {
+        background-color: #f9fafb;
+        color: #6b7280;
+    }
+    #booking-form select:disabled {
+        background-color: #f9fafb;
+        color: #9ca3af;
+        cursor: not-allowed;
+    }
+    /* Quantity stepper overrides — input sits between +/- buttons */
+    #booking-form #id_quantity {
+        flex: 1;
+        min-width: 3rem;
+        text-align: center;
+        border-radius: 0;
+        border-left: 0;
+        border-right: 0;
+    }
+    /* Hide native browser number spinners (we have our own +/-) */
+    #id_quantity::-webkit-inner-spin-button,
+    #id_quantity::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+    #id_quantity { -moz-appearance: textfield; }
+</style>
+
+{{ preselected_user|json_script:"preselected-user-data" }}
+<script>
+(function() {
+    const form = document.getElementById('booking-form');
+    const userIdInput = document.querySelector('input[name="user_id"]');
+    const periodTypeInput = document.querySelector('input[name="period_type"]');
+    const tariffSelect = document.querySelector('[name="tariff"]');
+    const periodSelect = document.querySelector('[name="period"]');
+    const overrideCheckbox = document.querySelector('[name="override_price"]');
+    const priceInput = document.querySelector('[name="price_aed"]');
+    const quantityInput = document.querySelector('[name="quantity"]');
+    const qtySection = document.getElementById('qty-section');
+    const qtyLabel = document.getElementById('qty-label');
+    const qtyAvailability = document.getElementById('qty-availability');
+    const qtyMinus = document.getElementById('qty-minus');
+    const qtyPlus = document.getElementById('qty-plus');
+    const paymentSelect = document.querySelector('[name="payment_method"]');
+    const priceHint = document.getElementById('price-hint');
+
+    let currentTariff = null;  // {periods: [...], quantity_label: ''}
+
+    // ===== USER AUTOCOMPLETE =====
+    const userSearchWrap = document.getElementById('user-search-wrap');
+    const userSearch = document.getElementById('user-search');
+    const userResults = document.getElementById('user-results');
+    const selectedUser = document.getElementById('selected-user');
+    const selectedUserLabel = document.getElementById('selected-user-label');
+    const btnClearUser = document.getElementById('btn-clear-user');
+
+    function selectUser(user) {
+        userIdInput.value = user.id;
+        selectedUserLabel.textContent = `${user.name} <${user.email}>` + (user.phone ? ` · ${user.phone}` : '');
+        selectedUser.classList.remove('hidden');
+        selectedUser.style.display = 'flex';
+        userSearch.value = '';
+        userSearchWrap.classList.add('hidden');
+        userResults.classList.add('hidden');
+        loadActiveBooking(user.id);
+    }
+
+    function clearUser() {
+        userIdInput.value = '';
+        selectedUser.classList.add('hidden');
+        selectedUser.style.display = '';
+        userSearchWrap.classList.remove('hidden');
+        userSearch.focus();
+        removeCurrentUnitOption();
+    }
+    btnClearUser.addEventListener('click', clearUser);
+
+    let searchTimer = null;
+    userSearch.addEventListener('input', function() {
+        clearTimeout(searchTimer);
+        const q = this.value.trim();
+        if (q.length < 2) {
+            userResults.classList.add('hidden');
+            return;
+        }
+        searchTimer = setTimeout(() => {
+            fetch(`{% url 'backoffice:api_user_search' %}?q=${encodeURIComponent(q)}`)
+                .then(r => r.json())
+                .then(data => {
+                    userResults.innerHTML = '';
+                    if (data.results.length === 0) {
+                        userResults.innerHTML = '<div class="px-3 py-2 text-sm text-gray-500">No customers found</div>';
+                    } else {
+                        data.results.forEach(u => {
+                            const item = document.createElement('button');
+                            item.type = 'button';
+                            item.className = 'w-full text-left px-3 py-2 hover:bg-gray-100 text-sm border-b border-gray-100 last:border-b-0';
+                            item.innerHTML = `<div class="font-medium">${u.name}</div><div class="text-xs text-gray-500">${u.email}${u.phone ? ' · ' + u.phone : ''}</div>`;
+                            item.addEventListener('click', () => selectUser(u));
+                            userResults.appendChild(item);
+                        });
+                    }
+                    userResults.classList.remove('hidden');
+                });
+        }, 200);
+    });
+
+    // Preselected user (e.g. coming from /users/create/?then=create_booking)
+    const preselectedData = JSON.parse(document.getElementById('preselected-user-data').textContent);
+    if (preselectedData) {
+        selectUser(preselectedData);
+    }
+
+    // ===== EXTENSION DETECTION =====
+    const storageUnitSelect = document.querySelector('[name="storage_unit"]');
+    const extensionBanner = document.getElementById('extension-banner');
+    const tariffSection = document.querySelector('[name="tariff"]').closest('section');
+    let activeBookingData = null;
+
+    const CURRENT_OPTION_CLASS = 'current-unit-option';
+
+    function removeCurrentUnitOption() {
+        activeBookingData = null;
+        Array.from(storageUnitSelect.querySelectorAll('.' + CURRENT_OPTION_CLASS))
+            .forEach(o => o.remove());
+        updateExtensionMode();
+    }
+
+    function loadActiveBooking(userId) {
+        removeCurrentUnitOption();
+        fetch(`/backoffice/api/users/${userId}/active-booking/`)
+            .then(r => r.ok ? r.json() : { active_booking: null })
+            .then(data => {
+                if (!data.active_booking) return;
+                activeBookingData = data.active_booking;
+                const opt = document.createElement('option');
+                opt.value = data.active_booking.unit_id;
+                opt.textContent = `★ Current: ${data.active_booking.unit_code} — extend booking #${data.active_booking.number}`;
+                opt.classList.add(CURRENT_OPTION_CLASS);
+                // Insert after the empty option (auto-select)
+                const firstOpt = storageUnitSelect.querySelector('option');
+                if (firstOpt) {
+                    firstOpt.insertAdjacentElement('afterend', opt);
+                } else {
+                    storageUnitSelect.appendChild(opt);
+                }
+                // Default to extension when an active booking exists — this is
+                // far more common than creating a parallel booking, so we want
+                // the manager to opt INTO a new booking, not the other way around.
+                storageUnitSelect.value = String(data.active_booking.unit_id);
+                updateExtensionMode();
+            });
+    }
+
+    function isExtensionMode() {
+        if (!activeBookingData) return false;
+        return String(storageUnitSelect.value) === String(activeBookingData.unit_id);
+    }
+
+    const storageHint = document.getElementById('storage-hint');
+    const DEFAULT_STORAGE_HINT = 'Leave on auto to take the first free one.';
+
+    function updateUnitSelectability() {
+        const qty = parseInt(quantityInput.value) || 1;
+        if (qty > 1) {
+            // Multi-unit booking — must auto-assign. Force empty value, lock the select.
+            storageUnitSelect.value = '';
+            storageUnitSelect.disabled = true;
+            storageHint.textContent = `Auto-assigning ${qty} free units (specific unit cannot be picked for multi-unit bookings).`;
+        } else {
+            storageUnitSelect.disabled = false;
+            storageHint.textContent = DEFAULT_STORAGE_HINT;
+        }
+    }
+
+    function updateExtensionMode() {
+        const ext = isExtensionMode();
+        if (ext) {
+            extensionBanner.classList.remove('hidden');
+            // Quantity locked to 1 in extension mode
+            quantityInput.value = 1;
+            qtySection.classList.add('hidden');
+            // Tariff is inherited from parent — hide it
+            if (tariffSection) tariffSection.classList.add('hidden');
+        } else {
+            extensionBanner.classList.add('hidden');
+            if (tariffSection) tariffSection.classList.remove('hidden');
+            // Re-evaluate quantity visibility based on current tariff
+            if (currentTariff) applyTariffData(currentTariff);
+        }
+        updateUnitSelectability();
+        updatePriceMode();
+    }
+
+    storageUnitSelect.addEventListener('change', updateExtensionMode);
+
+    // ===== QUANTITY STEPPER =====
+    function getMaxQty() {
+        return Math.max(1, parseInt(quantityInput.max) || 1);
+    }
+    function setQty(n) {
+        const max = getMaxQty();
+        const clamped = Math.min(Math.max(1, n), max);
+        quantityInput.value = clamped;
+        updateQtyAvailability();
+        updateUnitSelectability();
+        updatePriceMode();
+    }
+    qtyMinus.addEventListener('click', () => setQty((parseInt(quantityInput.value) || 1) - 1));
+    qtyPlus.addEventListener('click', () => {
+        const cur = parseInt(quantityInput.value) || 1;
+        const max = getMaxQty();
+        if (cur >= max) {
+            qtyAvailability.textContent = `Only ${max} unit(s) available`;
+            qtyAvailability.classList.add('text-red-600');
+            setTimeout(() => qtyAvailability.classList.remove('text-red-600'), 1500);
+            return;
+        }
+        setQty(cur + 1);
+    });
+    quantityInput.addEventListener('input', () => {
+        updateQtyAvailability();
+        updateUnitSelectability();
+    });
+    quantityInput.addEventListener('blur', () => {
+        // Clamp manual input on blur
+        setQty(parseInt(quantityInput.value) || 1);
+    });
+    updateUnitSelectability();
+
+    // ===== TARIFF AUTO-SELECT (if only one active) =====
+    const tariffStatic = document.getElementById('tariff-static');
+    if (tariffSelect) {
+        const realOptions = Array.from(tariffSelect.options).filter(o => o.value);
+        if (realOptions.length === 1) {
+            tariffSelect.value = realOptions[0].value;
+            // Replace dropdown with static label for cleaner UX
+            tariffSelect.classList.add('hidden');
+            if (tariffStatic) {
+                tariffStatic.textContent = realOptions[0].text;
+                tariffStatic.classList.remove('hidden');
+            }
+        }
+    }
+
+    function loadTariff(tariffId) {
+        if (!tariffId) {
+            currentTariff = null;
+            return Promise.resolve(null);
+        }
+        return fetch(`/backoffice/api/tariffs/${tariffId}/`)
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                currentTariff = data;
+                if (data) applyTariffData(data);
+                return data;
+            });
+    }
+
+    function applyTariffData(t) {
+        // Quantity visibility + availability cap
+        const maxAvailable = Math.max(1, t.available_units || 1);
+        quantityInput.max = maxAvailable;
+        if (t.quantity_label) {
+            qtyLabel.textContent = t.quantity_label;
+            qtySection.classList.remove('hidden');
+            qtyAvailability.textContent = `${t.available_units} of ${t.available_units} free`;
+        } else {
+            qtySection.classList.add('hidden');
+            quantityInput.value = 1;
+        }
+        // Re-clamp current value if it now exceeds availability
+        const currentQty = parseInt(quantityInput.value) || 1;
+        if (currentQty > maxAvailable) {
+            quantityInput.value = maxAvailable;
+        }
+        updateQtyAvailability();
+        updateUnitSelectability();
+        // Auto-fill price for standard tab
+        if (periodTypeInput.value === 'standard') {
+            updatePriceFromPeriod();
+        }
+    }
+
+    function updateQtyAvailability() {
+        if (!currentTariff) return;
+        const total = currentTariff.available_units || 0;
+        const cur = parseInt(quantityInput.value) || 1;
+        qtyAvailability.textContent = total > 0
+            ? `${cur} selected · ${total} free`
+            : 'No units available';
+    }
+
+    if (tariffSelect) {
+        tariffSelect.addEventListener('change', () => loadTariff(tariffSelect.value));
+        if (tariffSelect.value) loadTariff(tariffSelect.value);
+    } else {
+        // single-tariff view: tariff is in static block, but form needs the FK.
+        // We still need the tariff id — see hidden injection below in single-tariff branch.
+    }
+
+    // ===== PERIOD TABS =====
+    document.querySelectorAll('.period-tab').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const tab = btn.dataset.tab;
+            periodTypeInput.value = tab;
+            document.querySelectorAll('.period-tab').forEach(b => {
+                if (b.dataset.tab === tab) {
+                    b.classList.add('border-blue-600', 'text-blue-600');
+                    b.classList.remove('border-transparent', 'text-gray-500');
+                } else {
+                    b.classList.remove('border-blue-600', 'text-blue-600');
+                    b.classList.add('border-transparent', 'text-gray-500');
+                }
+            });
+            document.querySelectorAll('.period-pane').forEach(p => p.classList.add('hidden'));
+            document.getElementById('tab-' + tab).classList.remove('hidden');
+            updatePriceMode();
+        });
+    });
+
+    // ===== PRICE LOGIC =====
+    function updatePriceFromPeriod() {
+        if (!currentTariff || !periodSelect.value) return;
+        const period = currentTariff.periods.find(p => String(p.id) === periodSelect.value);
+        if (!period) return;
+        const qty = parseInt(quantityInput.value) || 1;
+        const price = (parseFloat(period.base_price) * qty).toFixed(2);
+        if (!overrideCheckbox.checked) {
+            priceInput.value = price;
+            priceInput.readOnly = true;
+            priceHint.textContent = `Auto: ${period.base_price} × ${qty} = ${price} AED. Tick override to edit.`;
+        }
+    }
+
+    const btnEditPrice = document.getElementById('btn-edit-price');
+
+    function updatePriceMode() {
+        const isCustom = periodTypeInput.value === 'custom';
+        if (isCustom) {
+            priceInput.readOnly = false;
+            btnEditPrice.classList.add('hidden');
+            priceHint.textContent = 'Enter total price for custom dates.';
+        } else {
+            btnEditPrice.classList.remove('hidden');
+            if (overrideCheckbox.checked) {
+                priceInput.readOnly = false;
+                btnEditPrice.textContent = 'Use standard';
+                priceHint.textContent = 'Custom price — click "Use standard" to revert.';
+            } else {
+                btnEditPrice.textContent = 'Edit price';
+                updatePriceFromPeriod();
+            }
+        }
+    }
+
+    btnEditPrice.addEventListener('click', () => {
+        overrideCheckbox.checked = !overrideCheckbox.checked;
+        if (overrideCheckbox.checked) {
+            // Switching INTO override — keep current auto-price as starting value
+            priceInput.focus();
+            priceInput.select && priceInput.select();
+        }
+        updatePriceMode();
+    });
+
+    periodSelect.addEventListener('change', updatePriceMode);
+    quantityInput.addEventListener('input', updatePriceMode);
+
+    // ===== PAYMENT METHOD HINT =====
+    const paymentHint = document.getElementById('payment-hint');
+    const PAYMENT_HINTS = {
+        'lk_invoice': 'Customer pays online from their cabinet via Stripe Checkout. Booking stays Pending until paid.',
+        'cash': 'You collect the money in cash/terminal. Booking will be activated immediately.',
+        'stripe_payment_link': 'You generate a Stripe Payment Link manually and send it to the customer. Booking is activated immediately on your side.',
+    };
+    function updatePaymentHint() {
+        paymentHint.textContent = PAYMENT_HINTS[paymentSelect.value] || '';
+    }
+    paymentSelect.addEventListener('change', updatePaymentHint);
+    updatePaymentHint();
+
+    // ===== USER MODAL =====
+    const userModal = document.getElementById('user-modal');
+    const userCreateForm = document.getElementById('user-create-form');
+    const passwordInput = document.getElementById('modal-password');
+    document.getElementById('btn-open-user-modal').addEventListener('click', () => {
+        userModal.classList.remove('hidden');
+        // Auto-generate a fresh password each time modal opens (manager can regenerate)
+        if (!passwordInput.value) passwordInput.value = generatePassword();
+    });
+    document.getElementById('btn-close-user-modal').addEventListener('click', () => userModal.classList.add('hidden'));
+    document.getElementById('btn-cancel-user-modal').addEventListener('click', () => userModal.classList.add('hidden'));
+
+    function generatePassword(length = 12) {
+        // Без двусмысленных символов (0 O o l 1 I) — менеджер диктует пароль голосом.
+        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+        const arr = new Uint32Array(length);
+        crypto.getRandomValues(arr);
+        return Array.from(arr, x => chars[x % chars.length]).join('');
+    }
+    document.getElementById('btn-gen-password').addEventListener('click', () => {
+        passwordInput.value = generatePassword();
+    });
+    document.getElementById('btn-copy-password').addEventListener('click', async (e) => {
+        const btn = e.currentTarget;
+        if (!passwordInput.value) return;
+        try {
+            await navigator.clipboard.writeText(passwordInput.value);
+            const original = btn.textContent;
+            btn.textContent = 'Copied ✓';
+            setTimeout(() => { btn.textContent = original; }, 1500);
+        } catch (err) {
+            // fallback: select the input
+            passwordInput.select();
+            document.execCommand('copy');
+        }
+    });
+
+    userCreateForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        // Clear errors
+        userCreateForm.querySelectorAll('[data-error]').forEach(p => p.classList.add('hidden'));
+
+        const fd = new FormData(userCreateForm);
+        const resp = await fetch(`{% url 'backoffice:api_user_create' %}`, {
+            method: 'POST',
+            body: fd,
+            headers: { 'X-CSRFToken': fd.get('csrfmiddlewaretoken') },
+        });
+        const data = await resp.json();
+        if (data.success) {
+            selectUser(data.user);
+            userModal.classList.add('hidden');
+            userCreateForm.reset();
+        } else {
+            for (const [field, errs] of Object.entries(data.errors || {})) {
+                const errEl = userCreateForm.querySelector(`[data-error="${field}"]`);
+                if (errEl) {
+                    errEl.textContent = errs.join(' ');
+                    errEl.classList.remove('hidden');
+                }
+            }
+        }
+    });
+
+})();
+</script>
+{% endblock %}

@@ -37,7 +37,7 @@ class DashboardView(TemplateView):
         # Статистика бронирований
         context['stats'] = {
             'active_bookings': Booking.objects.filter(
-                status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
+                status=Booking.Status.PAID,
                 parent_booking__isnull=True,
             ).count(),
             'pending_bookings': Booking.objects.filter(
@@ -50,12 +50,9 @@ class DashboardView(TemplateView):
             'new_feedback': FeedbackRequest.objects.filter(
                 status=FeedbackRequest.Status.NEW
             ).count(),
-            'expired_unreleased': Booking.objects.filter(
-                status=Booking.Status.EXPIRED,
-                parent_booking__isnull=True,
-            ).count(),
+            'expired_unreleased': Booking.overdue_qs(today).count(),
             'expiring_soon': Booking.objects.filter(
-                status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
+                status=Booking.Status.PAID,
                 parent_booking__isnull=True,
                 end_date__lte=today + timedelta(days=7),
                 end_date__gte=today
@@ -70,12 +67,13 @@ class DashboardView(TemplateView):
         total_units = storage_qs.count()
         expired_units = storage_qs.filter(
             is_available=False,
-            bookings__status=Booking.Status.EXPIRED,
+            bookings__status=Booking.Status.PAID,
             bookings__parent_booking__isnull=True,
+            bookings__end_date__lt=today,
         ).distinct().count()
         expiring_units = storage_qs.filter(
             is_available=False,
-            bookings__status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
+            bookings__status=Booking.Status.PAID,
             bookings__parent_booking__isnull=True,
             bookings__end_date__gte=today,
             bookings__end_date__lte=today + timedelta(days=14),
@@ -128,14 +126,13 @@ class DashboardView(TemplateView):
         ).select_related('user').order_by('-created_at')[:5]
 
         # Expired (unreleased) — требуют внимания менеджера
-        context['expired_bookings'] = Booking.objects.filter(
-            status=Booking.Status.EXPIRED,
-            parent_booking__isnull=True,
-        ).select_related('user').order_by('end_date')
+        context['expired_bookings'] = Booking.overdue_qs(today).select_related(
+            'user'
+        ).order_by('end_date')
 
         # Expiring soon (14 дней)
         context['expiring_bookings'] = Booking.objects.filter(
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
+            status=Booking.Status.PAID,
             parent_booking__isnull=True,
             end_date__gte=today,
             end_date__lte=today + timedelta(days=14),
@@ -168,40 +165,29 @@ class BookingListView(ListView):
         status = self.request.GET.get('status')
 
         if status == 'expired':
-            qs = Booking.objects.filter(
-                status=Booking.Status.EXPIRED,
-                parent_booking__isnull=True,
-            ).order_by('end_date')
+            # Просрочено — PAID + end_date в прошлом
+            qs = Booking.overdue_qs(today).order_by('end_date')
         elif status == 'expiring_soon':
             qs = Booking.objects.filter(
-                status=Booking.Status.ACTIVE,
+                status=Booking.Status.PAID,
                 parent_booking__isnull=True,
                 end_date__gte=today,
                 end_date__lte=today + timedelta(days=14),
             ).order_by('end_date')
         elif status == 'active':
-            qs = Booking.objects.filter(
-                status=Booking.Status.ACTIVE,
-                parent_booking__isnull=True,
-            ).order_by('end_date')
+            # В работе сейчас — PAID + start_date наступил + end_date ещё не прошёл
+            qs = Booking.active_qs(today).order_by('end_date')
         else:
-            # По умолчанию: expired + expiring + active, с приоритетной сортировкой
+            # По умолчанию: всё PAID + parent_booking__isnull, с приоритетной
+            # сортировкой (overdue → expiring_soon → expiring_2w → rest)
             qs = Booking.objects.filter(
-                status__in=[Booking.Status.ACTIVE, Booking.Status.EXPIRED],
+                status=Booking.Status.PAID,
                 parent_booking__isnull=True,
             ).annotate(
                 sort_priority=Case(
-                    When(status=Booking.Status.EXPIRED, then=Value(0)),
-                    When(
-                        status=Booking.Status.ACTIVE,
-                        end_date__lte=today + timedelta(days=7),
-                        then=Value(1),
-                    ),
-                    When(
-                        status=Booking.Status.ACTIVE,
-                        end_date__lte=today + timedelta(days=14),
-                        then=Value(2),
-                    ),
+                    When(end_date__lt=today, then=Value(0)),  # overdue
+                    When(end_date__lte=today + timedelta(days=7), then=Value(1)),
+                    When(end_date__lte=today + timedelta(days=14), then=Value(2)),
                     default=Value(3),
                     output_field=IntegerField(),
                 ),
@@ -229,13 +215,16 @@ class BookingListView(ListView):
         context['current_status'] = self.request.GET.get('status', '')
         context['search'] = self.request.GET.get('search', '')
 
-        # Счётчики для фильтров
-        base = Booking.objects.filter(parent_booking__isnull=True)
+        # Счётчики для фильтров (всё считается из PAID-брони, разница в датах)
+        base = Booking.objects.filter(
+            status=Booking.Status.PAID, parent_booking__isnull=True,
+        )
         context['stats'] = {
-            'active': base.filter(status=Booking.Status.ACTIVE).count(),
-            'expired': base.filter(status=Booking.Status.EXPIRED).count(),
+            'active': base.filter(
+                start_date__lte=today, end_date__gte=today,
+            ).count(),
+            'expired': base.filter(end_date__lt=today).count(),
             'expiring_soon': base.filter(
-                status=Booking.Status.ACTIVE,
                 end_date__gte=today,
                 end_date__lte=today + timedelta(days=14),
             ).count(),
@@ -285,6 +274,11 @@ class PaymentListView(ListView):
                 paid_at__isnull=True,
             )
 
+        # Фильтр по способу оплаты
+        method = self.request.GET.get('method')
+        if method in dict(Booking.PaymentMethod.choices):
+            qs = qs.filter(payment_method=method)
+
         search = self.request.GET.get('search')
         if search:
             qs = qs.filter(
@@ -293,7 +287,8 @@ class PaymentListView(ListView):
                 Q(user__last_name__icontains=search) |
                 Q(stripe_payment_id__icontains=search) |
                 Q(stripe_session_id__icontains=search) |
-                Q(pk__icontains=search)
+                Q(pk__icontains=search) |
+                Q(number__icontains=search)
             )
 
         return qs
@@ -302,14 +297,23 @@ class PaymentListView(ListView):
         context = super().get_context_data(**kwargs)
         now = timezone.now()
         context['current_status'] = self.request.GET.get('status', '')
+        context['current_method'] = self.request.GET.get('method', '')
         context['search'] = self.request.GET.get('search', '')
+        context['payment_methods'] = Booking.PaymentMethod.choices
 
-        # Статистика
+        # Статистика по способам оплаты — выручка для каждого канала
+        paid_qs = Booking.objects.filter(paid_at__isnull=False)
+        revenue_by_method = dict(
+            paid_qs.values_list('payment_method').annotate(
+                total=Sum('payment_amount_collected'),
+            )
+        )
+
         context['stats'] = {
-            'total_paid': Booking.objects.filter(paid_at__isnull=False).count(),
-            'total_revenue': Booking.objects.filter(
-                paid_at__isnull=False
-            ).aggregate(total=Sum('total_aed'))['total'] or 0,
+            'total_paid': paid_qs.count(),
+            'total_revenue': paid_qs.aggregate(
+                total=Sum('payment_amount_collected'),
+            )['total'] or 0,
             'pending': Booking.objects.filter(
                 status=Booking.Status.PENDING,
                 expires_at__gt=now,
@@ -318,6 +322,9 @@ class PaymentListView(ListView):
                 status=Booking.Status.CANCELLED,
                 paid_at__isnull=True,
             ).count(),
+            'revenue_online': revenue_by_method.get('lk_invoice') or 0,
+            'revenue_cash': revenue_by_method.get('cash') or 0,
+            'revenue_link': revenue_by_method.get('stripe_payment_link') or 0,
         }
 
         return context
@@ -366,6 +373,46 @@ class UserDetailView(DetailView):
             'tariff', 'tariff__location', 'period', 'storage_unit'
         ).order_by('-created_at')[:10]
         return context
+
+
+@staff_member_required
+def user_set_password(request, pk):
+    """Менеджер задаёт новый пароль клиента (например, восстановление доступа)."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+
+    target = get_object_or_404(User, pk=pk)
+
+    # Защита от эскалации привилегий: рядовой staff не может перебить пароль
+    # суперюзера. Сам суперюзер — может (через Django admin это и так возможно).
+    if target.is_superuser and not request.user.is_superuser:
+        return JsonResponse(
+            {'success': False, 'error': 'Cannot change a superuser password.'},
+            status=403,
+        )
+
+    new_password = (request.POST.get('password') or '').strip()
+    if not new_password:
+        return JsonResponse(
+            {'success': False, 'error': 'Password is required.'}, status=400,
+        )
+
+    from django.contrib.auth.password_validation import validate_password
+    from django.core.exceptions import ValidationError
+    try:
+        validate_password(new_password, target)
+    except ValidationError as e:
+        return JsonResponse(
+            {'success': False, 'error': ' '.join(e.messages)}, status=400,
+        )
+
+    target.set_password(new_password)
+    target.save(update_fields=['password'])
+
+    return JsonResponse({
+        'success': True,
+        'message': f'Password updated for {target.email}.',
+    })
 
 
 @staff_member_required
@@ -599,19 +646,12 @@ class UnitListView(ListView):
     def get_queryset(self):
         today = timezone.now().date()
 
-        # Subquery: end_date текущего бронирования (paid/active/expired)
+        # Subquery: end_date текущего PAID-бронирования
         current_booking_end = Booking.objects.filter(
             storage_unit=OuterRef('pk'),
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE, Booking.Status.EXPIRED],
+            status=Booking.Status.PAID,
             parent_booking__isnull=True,
         ).order_by('-created_at').values('end_date')[:1]
-
-        # Subquery: статус текущего бронирования
-        current_booking_status = Booking.objects.filter(
-            storage_unit=OuterRef('pk'),
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE, Booking.Status.EXPIRED],
-            parent_booking__isnull=True,
-        ).order_by('-created_at').values('status')[:1]
 
         qs = StorageUnit.objects.filter(
             section__location__location_type__in=self.STORAGE_LOCATION_TYPES,
@@ -619,12 +659,11 @@ class UnitListView(ListView):
             'section', 'section__location', 'section__service'
         ).annotate(
             booking_end_date=Subquery(current_booking_end),
-            booking_status=Subquery(current_booking_status, output_field=CharField()),
             sort_priority=Case(
-                # Expired — самый высокий приоритет
+                # Overdue — end_date в прошлом → самый высокий приоритет
                 When(
                     is_available=False,
-                    booking_status=Booking.Status.EXPIRED,
+                    booking_end_date__lt=today,
                     then=Value(0),
                 ),
                 # Expiring <= 7 days
@@ -662,7 +701,7 @@ class UnitListView(ListView):
         elif status == 'expiring_soon':
             qs = qs.filter(
                 is_available=False,
-                bookings__status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
+                bookings__status=Booking.Status.PAID,
                 bookings__parent_booking__isnull=True,
                 bookings__end_date__gte=today,
                 bookings__end_date__lte=today + timedelta(days=14),
@@ -670,8 +709,9 @@ class UnitListView(ListView):
         elif status == 'expired':
             qs = qs.filter(
                 is_available=False,
-                bookings__status=Booking.Status.EXPIRED,
+                bookings__status=Booking.Status.PAID,
                 bookings__parent_booking__isnull=True,
+                bookings__end_date__lt=today,
             ).distinct()
 
         # Поиск
@@ -702,15 +742,16 @@ class UnitListView(ListView):
             'occupied': storage_units.filter(is_active=True, is_available=False).count(),
             'expiring_soon': storage_units.filter(
                 is_available=False,
-                bookings__status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
+                bookings__status=Booking.Status.PAID,
                 bookings__parent_booking__isnull=True,
                 bookings__end_date__gte=today,
                 bookings__end_date__lte=today + timedelta(days=14),
             ).distinct().count(),
             'expired': storage_units.filter(
                 is_available=False,
-                bookings__status=Booking.Status.EXPIRED,
+                bookings__status=Booking.Status.PAID,
                 bookings__parent_booking__isnull=True,
+                bookings__end_date__lt=today,
             ).distinct().count(),
         }
 
@@ -735,7 +776,7 @@ class UnitDetailView(DetailView):
         # Текущее активное бронирование
         context['current_booking'] = Booking.objects.filter(
             storage_unit=self.object,
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE]
+            status=Booking.Status.PAID,
         ).select_related('user', 'tariff', 'tariff__location', 'period').first()
 
         # История бронирований
@@ -783,7 +824,7 @@ def booking_release(request, pk):
     if request.method == 'POST':
         booking = get_object_or_404(Booking, pk=pk)
 
-        if booking.status not in [Booking.Status.EXPIRED, Booking.Status.ACTIVE]:
+        if booking.status != Booking.Status.PAID:
             if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
                 return JsonResponse({'success': False, 'error': 'Booking cannot be released'}, status=400)
             return redirect('backoffice:booking_detail', pk=pk)
@@ -807,7 +848,7 @@ def booking_reassign_unit(request, pk):
         pk=pk,
     )
 
-    if booking.status not in [Booking.Status.PAID, Booking.Status.ACTIVE, Booking.Status.EXPIRED]:
+    if booking.status != Booking.Status.PAID:
         messages.error(request, 'Cannot reassign unit for this booking status.')
         return redirect('backoffice:booking_detail', pk=pk)
 
@@ -910,3 +951,346 @@ def payment_fetch_receipt(request, pk):
 
     except stripe.error.StripeError as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=400)
+
+
+@method_decorator(staff_member_required, name='dispatch')
+class ManagerUserCreateView(TemplateView):
+    """Менеджер создаёт нового клиента под ключ."""
+    template_name = 'backoffice/users/create.html'
+
+    def get_context_data(self, **kwargs):
+        from .forms import ManagerUserCreateForm
+        context = super().get_context_data(**kwargs)
+        context.setdefault('form', ManagerUserCreateForm())
+        return context
+
+    def post(self, request):
+        from .forms import ManagerUserCreateForm
+        form = ManagerUserCreateForm(request.POST)
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data(form=form))
+
+        user = form.save()
+        messages.success(
+            request,
+            f'Customer {user.email} created. Share the password with them.',
+        )
+
+        if request.POST.get('then') == 'create_booking':
+            return redirect(
+                f"{request.build_absolute_uri('/backoffice/bookings/create/')}?user={user.pk}"
+            )
+        return redirect('backoffice:user_detail', pk=user.pk)
+
+
+@method_decorator(staff_member_required, name='dispatch')
+class ManagerBookingCreateView(TemplateView):
+    """Менеджер создаёт бронирование от имени клиента."""
+    template_name = 'backoffice/bookings/create.html'
+
+    def get_context_data(self, **kwargs):
+        from .forms import ManagerBookingCreateForm, ManagerUserCreateForm
+        from services.models import Tariff
+        context = super().get_context_data(**kwargs)
+
+        initial = {}
+        preselected_user_id = self.request.GET.get('user')
+        if preselected_user_id:
+            initial['user_id'] = preselected_user_id
+
+        if 'form' not in context:
+            context['form'] = ManagerBookingCreateForm(initial=initial)
+
+        # Для autocomplete предзаполненного клиента — отдадим его в JSON виде
+        context['preselected_user'] = None
+        if preselected_user_id:
+            try:
+                u = User.objects.get(pk=preselected_user_id)
+                context['preselected_user'] = {
+                    'id': u.pk,
+                    'email': u.email,
+                    'name': u.get_full_name() or u.email,
+                }
+            except User.DoesNotExist:
+                pass
+
+        # Для авто-выбора единственного тарифа во фронте
+        context['active_tariffs_count'] = Tariff.objects.filter(is_active=True).count()
+        context['user_create_form'] = ManagerUserCreateForm()
+        return context
+
+    def post(self, request):
+        from .forms import ManagerBookingCreateForm
+        form = ManagerBookingCreateForm(request.POST)
+        if not form.is_valid():
+            return self.render_to_response(self.get_context_data(form=form))
+
+        booking = create_booking_from_manager_form(form, manager=request.user)
+
+        if booking.payment_method == Booking.PaymentMethod.LK_INVOICE:
+            messages.success(
+                request,
+                f'Booking #{booking.number} created — pending payment in customer cabinet.',
+            )
+        else:
+            messages.success(
+                request,
+                f'Booking #{booking.number} created and activated ({booking.get_payment_method_display()}).',
+            )
+        return redirect('backoffice:booking_detail', pk=booking.pk)
+
+
+@staff_member_required
+def api_user_search(request):
+    """Поиск клиента для autocomplete в форме создания брони."""
+    q = (request.GET.get('q') or '').strip()
+    if len(q) < 2:
+        return JsonResponse({'results': []})
+
+    users = User.objects.filter(
+        Q(email__icontains=q)
+        | Q(first_name__icontains=q)
+        | Q(last_name__icontains=q)
+        | Q(phone__icontains=q)
+    ).order_by('email')[:15]
+
+    return JsonResponse({
+        'results': [
+            {
+                'id': u.pk,
+                'email': u.email,
+                'name': u.get_full_name() or u.email,
+                'phone': u.phone or '',
+            }
+            for u in users
+        ]
+    })
+
+
+@staff_member_required
+def api_user_create(request):
+    """Inline-создание клиента из модалки на форме создания брони."""
+    if request.method != 'POST':
+        return JsonResponse({'success': False, 'error': 'POST required'}, status=405)
+
+    from .forms import ManagerUserCreateForm
+    form = ManagerUserCreateForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse(
+            {'success': False, 'errors': {k: [str(e) for e in v] for k, v in form.errors.items()}},
+            status=400,
+        )
+
+    user = form.save()
+    return JsonResponse({
+        'success': True,
+        'user': {
+            'id': user.pk,
+            'email': user.email,
+            'name': user.get_full_name() or user.email,
+            'phone': user.phone or '',
+        },
+    })
+
+
+@staff_member_required
+def api_user_active_booking(request, pk):
+    """Активное основное бронирование клиента (для extension-флоу).
+
+    Возвращает данные о текущем юните клиента, если он есть. Используется
+    на форме создания брони: если юнит занят выбранным клиентом, менеджер
+    выбирает его → форма создаёт extension вместо новой брони.
+    """
+    try:
+        user = User.objects.get(pk=pk)
+    except User.DoesNotExist:
+        return JsonResponse({'error': 'not found'}, status=404)
+
+    booking = (
+        Booking.objects
+        .filter(
+            user=user,
+            status=Booking.Status.PAID,
+            parent_booking__isnull=True,
+            storage_unit__isnull=False,
+        )
+        .select_related('storage_unit__section__location', 'tariff', 'period')
+        .order_by('-end_date')
+        .first()
+    )
+
+    if not booking:
+        return JsonResponse({'active_booking': None})
+
+    return JsonResponse({
+        'active_booking': {
+            'id': booking.pk,
+            'number': booking.number,
+            'unit_id': booking.storage_unit.pk,
+            'unit_code': booking.storage_unit.full_code,
+            'tariff_id': booking.tariff_id,
+            'period_id': booking.period_id,
+            'end_date': booking.end_date.isoformat(),
+            'status': booking.status,
+        }
+    })
+
+
+@staff_member_required
+def api_tariff_info(request, pk):
+    """Тариф + его периоды — для динамического обновления формы."""
+    from services.models import Tariff
+    try:
+        tariff = Tariff.objects.select_related('service').prefetch_related('periods__price_tiers').get(pk=pk, is_active=True)
+    except Tariff.DoesNotExist:
+        return JsonResponse({'error': 'not found'}, status=404)
+
+    periods = []
+    for p in tariff.periods.filter(is_active=True).order_by('sort_order', 'duration_value'):
+        periods.append({
+            'id': p.pk,
+            'name': p.name,
+            'duration_display': p.duration_display,
+            'base_price': str(p.base_price),
+        })
+
+    available = sum(
+        1 for u in tariff.service.sections.filter(location=tariff.location, is_active=True).first().units.filter(is_active=True, is_available=True)
+    ) if tariff.service.sections.filter(location=tariff.location, is_active=True).first() else 0
+
+    return JsonResponse({
+        'id': tariff.pk,
+        'name': tariff.name,
+        'service_type': tariff.service.service_type,
+        'quantity_label': tariff.service.quantity_label or '',
+        'available_units': tariff.available_units,
+        'periods': periods,
+    })
+
+
+def create_booking_from_manager_form(form, manager):
+    """Применить форму менеджера и создать Booking.
+
+    Если выбранный storage_unit уже принадлежит клиенту как primary unit
+    активного бронирования → создаём extension (продление). Иначе — новое
+    бронирование.
+
+    period_type=standard — цена из TariffPeriod, опционально override.
+    period_type=custom   — ручные start/end + ручная price.
+    Для cash/stripe_payment_link сразу активируем.
+    Для lk_invoice оставляем PENDING — клиент платит из ЛК.
+    """
+    from decimal import Decimal as D
+    cleaned = form.cleaned_data
+
+    user = User.objects.get(pk=cleaned['user_id'])
+    storage_unit = cleaned.get('storage_unit')
+    payment_method = cleaned['payment_method']
+    period_type = cleaned['period_type']
+    period_choice = cleaned.get('period')
+    quantity = cleaned['quantity']
+    manual_price = cleaned.get('price_aed')
+    override_price = cleaned.get('override_price')
+
+    # Определить, это продление или новая бронь (по выбранному юниту).
+    extension_parent = None
+    if storage_unit:
+        extension_parent = Booking.objects.filter(
+            user=user,
+            storage_unit=storage_unit,
+            parent_booking__isnull=True,
+            status=Booking.Status.PAID,
+        ).select_related('tariff').first()
+
+    if extension_parent:
+        # === EXTENSION ===
+        # Тариф наследуется от родителя. Quantity всегда 1 (продление одного юнита).
+        tariff = extension_parent.tariff
+        quantity = 1
+
+        if period_type == form.PERIOD_TYPE_CUSTOM:
+            start_date = cleaned['custom_start_date']
+            end_date = cleaned['custom_end_date']
+            price_aed = manual_price
+            period = period_choice or extension_parent.period
+        else:
+            period = period_choice
+            start_date = extension_parent.end_date
+            end_date = period.calculate_end_date(start_date)
+            if override_price and manual_price is not None:
+                price_aed = manual_price
+            else:
+                price_aed = period.get_unit_price(1)
+
+        unit_price = price_aed
+        total_aed = price_aed  # Extension никогда не берёт депозит
+
+        extension = Booking.objects.create(
+            user=user,
+            tariff=tariff,
+            period=period,
+            storage_unit=extension_parent.storage_unit,
+            start_date=start_date,
+            end_date=end_date,
+            quantity=quantity,
+            unit_price_aed=unit_price,
+            price_aed=price_aed,
+            addons_aed=D('0'),
+            deposit_aed=D('0'),
+            total_aed=total_aed,
+            payment_method=payment_method,
+            parent_booking=extension_parent,
+            created_by_manager=manager,
+        )
+
+        if payment_method == Booking.PaymentMethod.LK_INVOICE:
+            return extension
+
+        extension.complete_extension_externally_paid(total_aed)
+        extension.refresh_from_db()
+        return extension
+
+    # === NEW BOOKING ===
+    tariff = cleaned['tariff']
+
+    if period_type == form.PERIOD_TYPE_CUSTOM:
+        start_date = cleaned['custom_start_date']
+        end_date = cleaned['custom_end_date']
+        price_aed = manual_price
+        unit_price = (price_aed / quantity) if quantity else price_aed
+        period = period_choice or tariff.periods.filter(is_active=True).first()
+    else:
+        period = period_choice
+        start_date = timezone.now().date()
+        end_date = period.calculate_end_date(start_date)
+        if override_price and manual_price is not None:
+            price_aed = manual_price
+            unit_price = (price_aed / quantity) if quantity else price_aed
+        else:
+            unit_price = period.get_unit_price(quantity)
+            price_aed = unit_price * quantity
+
+    total_aed = price_aed  # без депозита
+
+    booking = Booking.objects.create(
+        user=user,
+        tariff=tariff,
+        period=period,
+        start_date=start_date,
+        end_date=end_date,
+        quantity=quantity,
+        unit_price_aed=unit_price,
+        price_aed=price_aed,
+        addons_aed=D('0'),
+        deposit_aed=D('0'),
+        total_aed=total_aed,
+        payment_method=payment_method,
+        created_by_manager=manager,
+    )
+
+    if payment_method == Booking.PaymentMethod.LK_INVOICE:
+        return booking
+
+    booking.activate_externally_paid(total_aed, storage_unit=storage_unit)
+    booking.refresh_from_db()
+    return booking

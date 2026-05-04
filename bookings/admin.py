@@ -32,13 +32,14 @@ class BookingUnitInline(admin.TabularInline):
 @admin.register(Booking)
 class BookingAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'user', 'tariff', 'period', 'quantity', 'storage_unit',
+        'number', 'user', 'tariff', 'period', 'quantity', 'storage_unit',
         'status_badge', 'unit_price_aed', 'total_aed', 'start_date', 'end_date', 'created_at'
     )
     list_filter = ('status', 'tariff__service', 'tariff__location', 'created_at')
-    search_fields = ('user__email', 'user__first_name', 'user__last_name', 'stripe_payment_id')
+    search_fields = ('number', 'user__email', 'user__first_name', 'user__last_name', 'stripe_payment_id')
     ordering = ('-created_at',)
     readonly_fields = (
+        'number',
         'stripe_session_id', 'stripe_payment_id', 'paid_at',
         'created_at', 'updated_at', 'expires_at', 'total_aed',
         'unit_price_aed',
@@ -49,7 +50,7 @@ class BookingAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('user', 'tariff', 'period', 'storage_unit', 'quantity')
+            'fields': ('number', 'user', 'tariff', 'period', 'storage_unit', 'quantity')
         }),
         (_('Dates'), {
             'fields': ('start_date', 'end_date')
@@ -80,19 +81,22 @@ class BookingAdmin(admin.ModelAdmin):
     inlines = [BookingUnitInline, BookingAddonInline]
 
     def status_badge(self, obj):
+        # Используем display_status, который различает active/overdue по датам
         colors = {
             'pending': '#f59e0b',  # orange
-            'paid': '#3b82f6',  # blue
-            'active': '#10b981',  # green
+            'paid': '#3b82f6',  # blue (paid, ещё не активирован — start_date в будущем)
+            'active': '#10b981',  # green (start_date наступил, end_date в будущем)
+            'overdue': '#ef4444',  # red (end_date в прошлом, юнит требует release)
             'completed': '#6b7280',  # gray
-            'cancelled': '#ef4444',  # red
+            'cancelled': '#9ca3af',  # light gray
         }
-        color = colors.get(obj.status, '#6b7280')
+        ds = obj.display_status
+        color = colors.get(ds, '#6b7280')
         return format_html(
             '<span style="background:{}; color:white; padding:3px 10px; '
             'border-radius:10px; font-size:11px; font-weight:bold;">{}</span>',
             color,
-            obj.get_status_display()
+            obj.display_status_label
         )
 
     status_badge.short_description = _('Status')

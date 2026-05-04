@@ -1,11 +1,11 @@
 {% extends 'backoffice/base.html' %}
 
-{% block title %}Booking #{{ booking.pk }}{% endblock %}
+{% block title %}Booking #{{ booking.number }}{% endblock %}
 
 {% block content %}
 <div class="mb-8">
     <a href="{% url 'backoffice:booking_list' %}" class="text-blue-600 hover:underline text-sm">← Back to bookings</a>
-    <h1 class="text-2xl font-bold text-gray-900 mt-2">Booking #{{ booking.pk }}</h1>
+    <h1 class="text-2xl font-bold text-gray-900 mt-2">Booking #{{ booking.number }}</h1>
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -15,12 +15,14 @@
         <div class="bg-white rounded-lg shadow p-6">
             <div class="flex justify-between items-start mb-4">
                 <h2 class="text-lg font-semibold">Booking Details</h2>
-                <span class="inline-flex px-3 py-1 text-sm rounded-full 
-                    {% if booking.status == 'paid' or booking.status == 'active' %}bg-green-100 text-green-800
-                    {% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800
-                    {% elif booking.status == 'cancelled' %}bg-red-100 text-red-800
+                <span class="inline-flex px-3 py-1 text-sm rounded-full
+                    {% if booking.display_status == 'active' %}bg-green-100 text-green-800
+                    {% elif booking.display_status == 'paid' %}bg-blue-100 text-blue-800
+                    {% elif booking.display_status == 'overdue' %}bg-red-100 text-red-800
+                    {% elif booking.display_status == 'pending' %}bg-yellow-100 text-yellow-800
+                    {% elif booking.display_status == 'cancelled' %}bg-gray-100 text-gray-800
                     {% else %}bg-gray-100 text-gray-800{% endif %}">
-                    {{ booking.get_status_display }}
+                    {{ booking.display_status_label }}
                 </span>
             </div>
             
@@ -215,7 +217,7 @@
                     <tr>
                         <td class="py-2"><a href="{% url 'backoffice:booking_detail' ext.pk %}" class="text-blue-600 hover:underline">#{{ ext.pk }}</a></td>
                         <td class="py-2">{{ ext.start_date|date:"d M" }} → {{ ext.end_date|date:"d M Y" }}</td>
-                        <td class="py-2">{{ ext.get_status_display }}</td>
+                        <td class="py-2">{{ ext.display_status_label }}</td>
                         <td class="py-2">AED {{ ext.total_aed }}</td>
                     </tr>
                     {% endfor %}

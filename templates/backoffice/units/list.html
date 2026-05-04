@@ -85,7 +85,7 @@
         <tbody class="divide-y divide-gray-200">
             {% for unit in units %}
             {% with current_booking=unit.current_booking %}
-            <tr class="{% if current_booking and current_booking.status == 'expired' %}bg-red-50 hover:bg-red-100{% elif current_booking and current_booking.days_remaining <= 7 and not unit.is_available %}bg-orange-50 hover:bg-orange-100{% elif current_booking and current_booking.days_remaining <= 14 and not unit.is_available %}bg-yellow-50 hover:bg-yellow-100{% else %}hover:bg-gray-50{% endif %}">
+            <tr class="{% if current_booking and current_booking.is_overdue %}bg-red-50 hover:bg-red-100{% elif current_booking and current_booking.days_remaining <= 7 and not unit.is_available %}bg-orange-50 hover:bg-orange-100{% elif current_booking and current_booking.days_remaining <= 14 and not unit.is_available %}bg-yellow-50 hover:bg-yellow-100{% else %}hover:bg-gray-50{% endif %}">
                 <td class="px-6 py-4">
                     <a href="{% url 'backoffice:unit_detail' unit.pk %}" class="font-mono font-bold text-blue-600 hover:underline">
                         {{ unit.full_code }}
@@ -100,7 +100,7 @@
                     <span class="inline-flex px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">Available</span>
                     {% else %}
                         {% with current_booking=unit.current_booking %}
-                        {% if current_booking and current_booking.status == 'expired' %}
+                        {% if current_booking and current_booking.is_overdue %}
                         <span class="inline-flex px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">Expired</span>
                         {% else %}
                         <span class="inline-flex px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">Occupied</span>
@@ -120,7 +120,7 @@
                 </td>
                 <td class="px-6 py-4 text-sm">
                     {% if not unit.is_available and current_booking %}
-                        {% if current_booking.status == 'expired' %}
+                        {% if current_booking.is_overdue %}
                         <span class="text-red-600 font-medium">{{ current_booking.end_date|date:"d M Y" }}</span>
                         <span class="text-xs text-red-600 font-bold block">{{ current_booking.days_overdue }}d overdue</span>
                         {% elif current_booking.days_remaining <= 7 %}

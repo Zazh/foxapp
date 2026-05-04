@@ -224,7 +224,7 @@
             {% for booking in expired_bookings %}
             <tr>
                 <td class="px-6 py-4">
-                    <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-red-700 hover:underline font-medium">#{{ booking.pk }}</a>
+                    <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-red-700 hover:underline font-medium">#{{ booking.number }}</a>
                 </td>
                 <td class="px-6 py-4">
                     <div class="text-sm font-medium">{{ booking.user.get_full_name|default:booking.user.email }}</div>
@@ -265,7 +265,7 @@
             {% for booking in expiring_bookings %}
             <tr>
                 <td class="px-6 py-4">
-                    <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-orange-700 hover:underline font-medium">#{{ booking.pk }}</a>
+                    <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-orange-700 hover:underline font-medium">#{{ booking.number }}</a>
                 </td>
                 <td class="px-6 py-4">
                     <div class="text-sm font-medium">{{ booking.user.get_full_name|default:booking.user.email }}</div>
@@ -305,7 +305,7 @@
             {% for booking in recent_bookings %}
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4">
-                    <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline">#{{ booking.pk }}</a>
+                    <a href="{% url 'backoffice:booking_detail' booking.pk %}" class="text-blue-600 hover:underline">#{{ booking.number }}</a>
                 </td>
                 <td class="px-6 py-4">
                     <a href="{% url 'backoffice:user_detail' booking.user.pk %}" class="hover:underline">{{ booking.user.email }}</a>
@@ -314,13 +314,13 @@
                 <td class="px-6 py-4 text-sm">{{ booking.start_date|date:"d M" }} → {{ booking.end_date|date:"d M Y" }}</td>
                 <td class="px-6 py-4">
                     <span class="inline-flex px-2 py-1 text-xs rounded-full
-                        {% if booking.status == 'active' %}bg-green-100 text-green-800
-                        {% elif booking.status == 'paid' %}bg-blue-100 text-blue-800
-                        {% elif booking.status == 'pending' %}bg-yellow-100 text-yellow-800
-                        {% elif booking.status == 'expired' %}bg-red-100 text-red-800
-                        {% elif booking.status == 'cancelled' %}bg-gray-100 text-gray-800
+                        {% if booking.display_status == 'active' %}bg-green-100 text-green-800
+                        {% elif booking.display_status == 'paid' %}bg-blue-100 text-blue-800
+                        {% elif booking.display_status == 'pending' %}bg-yellow-100 text-yellow-800
+                        {% elif booking.display_status == 'overdue' %}bg-red-100 text-red-800
+                        {% elif booking.display_status == 'cancelled' %}bg-gray-100 text-gray-800
                         {% else %}bg-gray-100 text-gray-800{% endif %}">
-                        {{ booking.get_status_display }}
+                        {{ booking.display_status_label }}
                     </span>
                 </td>
                 <td class="px-6 py-4 font-medium">AED {{ booking.total_aed }}</td>

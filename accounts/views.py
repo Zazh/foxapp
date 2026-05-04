@@ -68,7 +68,7 @@ def register_view(request):
             # и думали, что регистрация не сработала. Шлём прямо в
             # кабинет — flash-сообщение в шапке кабинета объяснит статус.
             next_url = request.POST.get('next', '')
-            if next_url and next_url.startswith('/'):
+            if next_url and next_url.startswith('/') and next_url != '/':
                 return redirect(next_url)
 
             return redirect('cabinet-dashboard')
@@ -142,9 +142,11 @@ def login_view(request):
             if user.language:
                 request.session['django_language'] = user.language
 
-            # Проверить next из POST или GET
+            # Проверить next из POST или GET. next='/' (главная) игнорируем —
+            # большинство модалок логина передают current path, и для главной
+            # это означает «ничего интересного», логичнее уйти в кабинет.
             next_url = request.POST.get('next') or request.GET.get('next', '')
-            if next_url and next_url.startswith('/'):
+            if next_url and next_url.startswith('/') and next_url != '/':
                 return redirect(next_url)
             return redirect('cabinet-dashboard')
     else:

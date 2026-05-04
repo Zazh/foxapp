@@ -146,7 +146,7 @@ class BookingCreateView(LoginRequiredMixin, View):
                         'currency': 'aed',
                         'unit_amount': int(total_aed * 100),
                         'product_data': {
-                            'name': f"{tariff.name} — {period.name}" + (f" x{quantity}" if quantity > 1 else ""),
+                            'name': f"#{booking.number} {tariff.name} — {period.name}" + (f" x{quantity}" if quantity > 1 else ""),
                             'description': f"Deposit: {deposit_aed} AED",
                         },
                     },
@@ -163,6 +163,7 @@ class BookingCreateView(LoginRequiredMixin, View):
                 customer_email=request.user.email,
                 metadata={
                     'booking_id': booking.pk,
+                    'booking_number': booking.number,
                 },
             )
 
@@ -208,7 +209,7 @@ class BookingCheckoutView(LoginRequiredMixin, View):
                         'currency': 'aed',
                         'unit_amount': int(booking.total_aed * 100),
                         'product_data': {
-                            'name': f"{booking.tariff_name or booking.tariff.name} — {booking.period_label or booking.period.name}" + (
+                            'name': f"#{booking.number} {booking.tariff_name or booking.tariff.name} — {booking.period_label or booking.period.name}" + (
                                 f" x{booking.quantity}" if booking.quantity > 1 else ""
                             ),
                         },
@@ -224,7 +225,10 @@ class BookingCheckoutView(LoginRequiredMixin, View):
                 ),
                 client_reference_id=str(booking.pk),
                 customer_email=request.user.email,
-                metadata={'booking_id': booking.pk},
+                metadata={
+                    'booking_id': booking.pk,
+                    'booking_number': booking.number,
+                },
             )
 
             booking.stripe_session_id = checkout_session.id

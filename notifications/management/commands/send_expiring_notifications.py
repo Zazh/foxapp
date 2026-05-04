@@ -28,8 +28,8 @@ class Command(BaseCommand):
 
             bookings = Booking.objects.filter(
                 end_date=target_date,
-                status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
-                parent_booking__isnull=True
+                status=Booking.Status.PAID,
+                parent_booking__isnull=True,
             ).select_related('user', 'tariff', 'storage_unit')
 
             self.stdout.write(f'=== Expiring in {days} days ({target_date}) ===')
@@ -45,42 +45,33 @@ class Command(BaseCommand):
                     except Exception as e:
                         self.stdout.write(self.style.ERROR(f'    ✗ Error: {e}'))
 
-        # Истёкшие бронирования - помечаем как EXPIRED (НЕ освобождаем ячейку!)
-        expired_bookings = Booking.objects.filter(
-            end_date__lt=today,  # Все где end_date в прошлом
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
-            parent_booking__isnull=True
-        ).select_related('user', 'tariff', 'storage_unit')
+        # Просроченные бронирования (end_date в прошлом, но юнит ещё занят) —
+        # шлём напоминание в первый день просрочки. Статус остаётся PAID, ячейка
+        # не освобождается; release делает менеджер вручную (Force Release).
+        overdue_bookings = Booking.overdue_qs(today).select_related(
+            'user', 'tariff', 'storage_unit',
+        )
 
-        self.stdout.write(f'\n=== Expired bookings ===')
-        self.stdout.write(f'Found: {expired_bookings.count()} bookings')
+        self.stdout.write(f'\n=== Overdue bookings ===')
+        self.stdout.write(f'Found: {overdue_bookings.count()} bookings')
 
-        for booking in expired_bookings:
+        for booking in overdue_bookings:
             days_overdue = (today - booking.end_date).days
             self.stdout.write(f'  - {booking.user.email}: Unit {booking.storage_unit} (overdue {days_overdue} days)')
 
-            if not dry_run:
+            if not dry_run and days_overdue == 1:
                 try:
-                    # Меняем статус на EXPIRED, но НЕ освобождаем ячейку
-                    booking.status = Booking.Status.EXPIRED
-                    booking.save(update_fields=['status'])
-
-                    # Уведомление отправляем только в первый день (когда только стало expired)
-                    if days_overdue == 1:
-                        from notifications.services import NotificationService
-
-                        NotificationService.send(
-                            user=booking.user,
-                            notification_type=NotificationTemplate.NotificationType.BOOKING_EXPIRED,
-                            context_data={
-                                'booking': booking,
-                                'unit': booking.storage_unit,
-                                'end_date': booking.end_date,
-                            }
-                        )
-                        self.stdout.write(self.style.SUCCESS(f'    ✓ Marked as EXPIRED, notification sent'))
-                    else:
-                        self.stdout.write(self.style.SUCCESS(f'    ✓ Marked as EXPIRED'))
+                    from notifications.services import NotificationService
+                    NotificationService.send(
+                        user=booking.user,
+                        notification_type=NotificationTemplate.NotificationType.BOOKING_EXPIRED,
+                        context_data={
+                            'booking': booking,
+                            'unit': booking.storage_unit,
+                            'end_date': booking.end_date,
+                        }
+                    )
+                    self.stdout.write(self.style.SUCCESS('    ✓ Notification sent (first overdue day)'))
                 except Exception as e:
                     self.stdout.write(self.style.ERROR(f'    ✗ Error: {e}'))
 

@@ -195,7 +195,7 @@ def google_callback(request):
     if user.language:
         request.session['django_language'] = user.language
 
-    if next_url and next_url.startswith('/'):
+    if next_url and next_url.startswith('/') and next_url != '/':
         return redirect(next_url)
 
     return redirect('cabinet-dashboard')

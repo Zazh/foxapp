@@ -33,7 +33,7 @@ class Command(BaseCommand):
         if dry_run:
             self.stdout.write(f'[DRY RUN] Would cancel {count} expired pending booking(s):')
             for b in expired_pending.select_related('user', 'tariff'):
-                self.stdout.write(f'  #{b.pk} — {b.user.email} — {b.tariff_name or b.tariff.name} (expired {b.expires_at})')
+                self.stdout.write(f'  #{b.number} — {b.user.email} — {b.tariff_name or b.tariff.name} (expired {b.expires_at})')
             return
 
         cancelled = 0
@@ -43,6 +43,6 @@ class Command(BaseCommand):
                     booking.cancel()
                 cancelled += 1
             except Exception as e:
-                self.stdout.write(self.style.ERROR(f'Error cancelling #{booking.pk}: {e}'))
+                self.stdout.write(self.style.ERROR(f'Error cancelling #{booking.number}: {e}'))
 
         self.stdout.write(self.style.SUCCESS(f'Cancelled {cancelled} expired pending booking(s).'))

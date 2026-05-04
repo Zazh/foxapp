@@ -29,7 +29,7 @@ class DashboardHomeView(DashboardMixin, TemplateView):
         # Только основные бронирования (не продления)
         active_bookings = list(Booking.objects.filter(
             user=user,
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE],
+            status=Booking.Status.PAID,
             parent_booking__isnull=True,
             storage_unit__isnull=False,
         ).select_related(
@@ -139,7 +139,7 @@ class ExtendBookingView(DashboardMixin, View):
             Booking,
             pk=pk,
             user=request.user,
-            status__in=[Booking.Status.PAID, Booking.Status.ACTIVE]
+            status=Booking.Status.PAID
         )
 
         period_id = request.POST.get('period')

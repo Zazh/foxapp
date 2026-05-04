@@ -1,7 +1,8 @@
 from decimal import Decimal
 from datetime import timedelta
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 
+from django.db import transaction
 from django.test import TestCase, RequestFactory, Client, override_settings
 from django.urls import reverse
 from django.utils import timezone
@@ -209,7 +210,7 @@ class BookingUnitTest(BookingTestMixin, TestCase):
         """When booking completes via complete(), all units become available."""
         booking = self.create_booking(quantity=2)
         booking.assign_storage_units()
-        booking.status = Booking.Status.ACTIVE
+        booking.status = Booking.Status.PAID
         booking.save(update_fields=['status'])
         booking.complete()
         for bu in booking.booking_units.all():
@@ -798,66 +799,20 @@ class MarkAsPaidAtomicityTest(BookingTestMixin, TestCase):
 
 
 class BookingLifecycleTest(BookingTestMixin, TestCase):
-    """Tests for activate/expire/complete lifecycle methods."""
+    """Tests for complete/extension lifecycle methods.
+
+    Booking больше не имеет ACTIVE/EXPIRED статусов — "active" и "overdue"
+    derivable от dates через is_active/is_overdue/display_status.
+    """
 
     def setUp(self):
         self.create_base_objects()
-
-    def test_activate_paid_booking(self):
-        booking = self.create_booking(
-            start_date=timezone.now().date(),
-        )
-        booking.mark_as_paid('pay_activate')
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Booking.Status.PAID)
-
-        booking.activate()
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Booking.Status.ACTIVE)
-
-    def test_activate_ignores_future_start(self):
-        booking = self.create_booking(
-            start_date=timezone.now().date() + timedelta(days=7),
-        )
-        booking.status = Booking.Status.PAID
-        booking.save(update_fields=['status'])
-
-        booking.activate()
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Booking.Status.PAID)
-
-    def test_expire_active_booking(self):
-        booking = self.create_booking()
-        booking.status = Booking.Status.ACTIVE
-        booking.end_date = timezone.now().date() - timedelta(days=1)
-        booking.save(update_fields=['status', 'end_date'])
-
-        booking.expire()
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Booking.Status.EXPIRED)
-
-    def test_expire_does_not_release_units(self):
-        """Expired booking keeps units occupied until force release."""
-        booking = self.create_booking(quantity=2)
-        booking.mark_as_paid('pay_expire')
-        booking.refresh_from_db()
-        booking.status = Booking.Status.ACTIVE
-        booking.save(update_fields=['status'])
-        booking.expire()
-
-        # Units should still be unavailable
-        for bu in booking.booking_units.all():
-            self.assertFalse(
-                StorageUnit.objects.get(pk=bu.storage_unit_id).is_available
-            )
 
     def test_complete_releases_units(self):
         """Force release (complete) frees units."""
         booking = self.create_booking(quantity=2)
         booking.mark_as_paid('pay_complete')
         booking.refresh_from_db()
-        booking.status = Booking.Status.ACTIVE
-        booking.save(update_fields=['status'])
         booking.complete()
 
         for bu in booking.booking_units.all():
@@ -884,49 +839,612 @@ class BookingLifecycleTest(BookingTestMixin, TestCase):
 
         self.assertEqual(extension.status, Booking.Status.COMPLETED)
         self.assertEqual(parent.end_date, original_end + timedelta(days=30))
+        # Parent остаётся PAID — статус не меняется на extension'е
+        self.assertEqual(parent.status, Booking.Status.PAID)
 
 
-class UpdateBookingStatusesCommandTest(BookingTestMixin, TestCase):
-    """Tests for update_booking_statuses management command."""
+class DisplayStatusTest(BookingTestMixin, TestCase):
+    """Tests for derivable display_status property and active/overdue helpers."""
 
     def setUp(self):
         self.create_base_objects()
 
-    def test_activates_paid_booking_on_start_date(self):
-        from django.core.management import call_command
-
-        booking = self.create_booking(start_date=timezone.now().date())
-        booking.status = Booking.Status.PAID
-        booking.save(update_fields=['status'])
-
-        call_command('update_booking_statuses')
-
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Booking.Status.ACTIVE)
-
-    def test_expires_active_booking_past_end_date(self):
-        from django.core.management import call_command
-
+    def test_pending_booking(self):
         booking = self.create_booking()
-        booking.status = Booking.Status.ACTIVE
-        booking.end_date = timezone.now().date() - timedelta(days=1)
-        booking.save(update_fields=['status', 'end_date'])
+        self.assertEqual(booking.display_status, 'pending')
+        self.assertFalse(booking.is_active)
+        self.assertFalse(booking.is_overdue)
 
-        call_command('update_booking_statuses')
-
-        booking.refresh_from_db()
-        self.assertEqual(booking.status, Booking.Status.EXPIRED)
-
-    def test_does_not_activate_future_booking(self):
-        from django.core.management import call_command
-
+    def test_paid_in_future_is_paid_status(self):
         booking = self.create_booking(
             start_date=timezone.now().date() + timedelta(days=5),
+            end_date=timezone.now().date() + timedelta(days=35),
         )
-        booking.status = Booking.Status.PAID
-        booking.save(update_fields=['status'])
+        booking.mark_as_paid('pi')
+        booking.refresh_from_db()
+        # PAID, ещё не начался
+        self.assertEqual(booking.display_status, 'paid')
+        self.assertFalse(booking.is_active)
+        self.assertFalse(booking.is_overdue)
 
-        call_command('update_booking_statuses')
+    def test_paid_in_progress_is_active(self):
+        booking = self.create_booking(
+            start_date=timezone.now().date() - timedelta(days=1),
+            end_date=timezone.now().date() + timedelta(days=29),
+        )
+        booking.mark_as_paid('pi')
+        booking.refresh_from_db()
+        self.assertEqual(booking.display_status, 'active')
+        self.assertTrue(booking.is_active)
+        self.assertFalse(booking.is_overdue)
+
+    def test_paid_past_end_date_is_overdue(self):
+        booking = self.create_booking()
+        booking.mark_as_paid('pi')
+        booking.refresh_from_db()
+        booking.end_date = timezone.now().date() - timedelta(days=2)
+        booking.save(update_fields=['end_date'])
+        self.assertEqual(booking.display_status, 'overdue')
+        self.assertFalse(booking.is_active)
+        self.assertTrue(booking.is_overdue)
+
+    def test_completed_status(self):
+        booking = self.create_booking()
+        booking.mark_as_paid('pi')
+        booking.refresh_from_db()
+        booking.complete()
+        self.assertEqual(booking.display_status, 'completed')
+        self.assertFalse(booking.is_active)
+        self.assertFalse(booking.is_overdue)
+
+    def test_active_qs_helper(self):
+        # Один активный
+        active_b = self.create_booking()
+        active_b.mark_as_paid('a')
+        # Один upcoming
+        upcoming = self.create_booking(
+            start_date=timezone.now().date() + timedelta(days=5),
+        )
+        upcoming.mark_as_paid('u')
+        # Один overdue
+        overdue = self.create_booking()
+        overdue.mark_as_paid('o')
+        overdue.end_date = timezone.now().date() - timedelta(days=1)
+        overdue.save(update_fields=['end_date'])
+
+        active_pks = set(Booking.active_qs().values_list('pk', flat=True))
+        self.assertEqual(active_pks, {active_b.pk})
+
+    def test_overdue_qs_helper(self):
+        normal = self.create_booking()
+        normal.mark_as_paid('n')
+        overdue = self.create_booking()
+        overdue.mark_as_paid('o')
+        overdue.end_date = timezone.now().date() - timedelta(days=1)
+        overdue.save(update_fields=['end_date'])
+
+        overdue_pks = set(Booking.overdue_qs().values_list('pk', flat=True))
+        self.assertEqual(overdue_pks, {overdue.pk})
+
+
+@override_settings(STRIPE_SECRET_KEY='sk_test_1234567890')
+class BookingCreateViewStripeTest(BookingTestMixin, TestCase):
+    """BookingCreateView when Stripe is configured (mocked SDK)."""
+
+    def setUp(self):
+        self.create_base_objects()
+        self.client = Client()
+        self.client.force_login(self.user)
+        self.url = reverse('booking_create', kwargs={
+            'service_type': 'auto',
+            'slug': self.tariff.slug,
+        })
+
+    @patch('bookings.views.stripe.checkout.Session.create')
+    def test_creates_stripe_session_and_redirects(self, mock_create):
+        session_obj = MagicMock()
+        session_obj.id = 'cs_test_xyz'
+        session_obj.url = 'https://checkout.stripe.com/pay/cs_test_xyz'
+        mock_create.return_value = session_obj
+
+        resp = self.client.post(self.url, {'period': self.period.id})
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.url, 'https://checkout.stripe.com/pay/cs_test_xyz')
+
+        booking = Booking.objects.latest('created_at')
+        self.assertEqual(booking.stripe_session_id, 'cs_test_xyz')
+        self.assertEqual(booking.status, Booking.Status.PENDING)
+
+        mock_create.assert_called_once()
+        kwargs = mock_create.call_args.kwargs
+        self.assertEqual(kwargs['mode'], 'payment')
+        self.assertEqual(kwargs['client_reference_id'], str(booking.pk))
+        self.assertEqual(kwargs['customer_email'], self.user.email)
+        self.assertEqual(kwargs['metadata']['booking_id'], booking.pk)
+        self.assertEqual(kwargs['metadata']['booking_number'], booking.number)
+        line_item = kwargs['line_items'][0]
+        # 700 AED = 70000 cents
+        self.assertEqual(line_item['price_data']['unit_amount'], 70000)
+        self.assertEqual(line_item['price_data']['currency'], 'aed')
+
+    @patch('bookings.views.stripe.checkout.Session.create')
+    def test_stripe_error_cancels_booking(self, mock_create):
+        import stripe as stripe_lib
+        mock_create.side_effect = stripe_lib.error.StripeError('boom')
+
+        resp = self.client.post(self.url, {'period': self.period.id})
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, 'bookings/error.html')
+
+        booking = Booking.objects.latest('created_at')
+        self.assertEqual(booking.status, Booking.Status.CANCELLED)
+
+
+@override_settings(STRIPE_SECRET_KEY='sk_test_1234567890')
+class BookingCheckoutViewStripeTest(BookingTestMixin, TestCase):
+    """BookingCheckoutView when Stripe is configured."""
+
+    def setUp(self):
+        self.create_base_objects()
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    @patch('bookings.views.stripe.checkout.Session.create')
+    def test_checkout_creates_session_and_redirects(self, mock_create):
+        booking = self.create_booking()
+        session_obj = MagicMock()
+        session_obj.id = 'cs_checkout_1'
+        session_obj.url = 'https://checkout.stripe.com/pay/cs_checkout_1'
+        mock_create.return_value = session_obj
+
+        url = reverse('booking_checkout', args=[booking.pk])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(resp.url, 'https://checkout.stripe.com/pay/cs_checkout_1')
+        booking.refresh_from_db()
+        self.assertEqual(booking.stripe_session_id, 'cs_checkout_1')
+        # client_reference_id reuses booking.pk
+        self.assertEqual(
+            mock_create.call_args.kwargs['client_reference_id'], str(booking.pk)
+        )
+
+    @patch('bookings.views.stripe.checkout.Session.create')
+    def test_checkout_stripe_error_cancels_booking(self, mock_create):
+        import stripe as stripe_lib
+        booking = self.create_booking()
+        mock_create.side_effect = stripe_lib.error.StripeError('fail')
+
+        url = reverse('booking_checkout', args=[booking.pk])
+        resp = self.client.get(url)
+
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, 'bookings/error.html')
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.CANCELLED)
+
+
+@override_settings(STRIPE_SECRET_KEY='sk_test_1234567890')
+class BookingSuccessViewTest(BookingTestMixin, TestCase):
+    """Fallback: success view marks paid via session_id when webhook hasn't fired."""
+
+    def setUp(self):
+        self.create_base_objects()
+        self.client = Client()
+        self.client.force_login(self.user)
+
+    def test_success_renders_for_already_paid_booking(self):
+        booking = self.create_booking()
+        booking.mark_as_paid('pi_already')
+        booking.refresh_from_db()
+
+        url = reverse('booking_success', args=[booking.pk])
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+        self.assertTemplateUsed(resp, 'bookings/success.html')
+
+    @patch('bookings.views.stripe.Charge.retrieve')
+    @patch('bookings.views.stripe.PaymentIntent.retrieve')
+    @patch('bookings.views.stripe.checkout.Session.retrieve')
+    def test_success_marks_pending_as_paid_via_session_id(
+        self, mock_session, mock_pi, mock_charge,
+    ):
+        booking = self.create_booking()
+        mock_session.return_value = MagicMock(
+            payment_status='paid', payment_intent='pi_xyz',
+        )
+        mock_pi.return_value = MagicMock(latest_charge='ch_xyz')
+        mock_charge.return_value = MagicMock(receipt_url='https://receipt/xyz')
+
+        url = reverse('booking_success', args=[booking.pk]) + '?session_id=cs_111'
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
 
         booking.refresh_from_db()
         self.assertEqual(booking.status, Booking.Status.PAID)
+        self.assertEqual(booking.stripe_payment_id, 'pi_xyz')
+        self.assertEqual(booking.stripe_receipt_url, 'https://receipt/xyz')
+
+    @patch('bookings.views.stripe.checkout.Session.retrieve')
+    def test_success_does_not_pay_when_session_unpaid(self, mock_session):
+        booking = self.create_booking()
+        mock_session.return_value = MagicMock(
+            payment_status='unpaid', payment_intent=None,
+        )
+
+        url = reverse('booking_success', args=[booking.pk]) + '?session_id=cs_222'
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PENDING)
+
+    @patch('bookings.views.stripe.checkout.Session.retrieve')
+    def test_success_handles_stripe_error_gracefully(self, mock_session):
+        import stripe as stripe_lib
+        booking = self.create_booking()
+        mock_session.side_effect = stripe_lib.error.StripeError('down')
+
+        url = reverse('booking_success', args=[booking.pk]) + '?session_id=cs_err'
+        resp = self.client.get(url)
+        self.assertEqual(resp.status_code, 200)
+
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PENDING)
+
+
+class BookingNotificationTest(BookingTestMixin, TestCase):
+    """notify_booking_paid integration on mark_as_paid."""
+
+    def setUp(self):
+        self.create_base_objects()
+
+    @patch('notifications.services.notify_booking_paid')
+    def test_mark_as_paid_calls_notify(self, mock_notify):
+        booking = self.create_booking()
+        booking.mark_as_paid('pi_notify')
+        mock_notify.assert_called_once()
+        called_booking = mock_notify.call_args.args[0]
+        self.assertEqual(called_booking.pk, booking.pk)
+
+    @patch('notifications.services.notify_booking_paid', side_effect=Exception('SMTP down'))
+    def test_notification_error_does_not_revert_payment(self, mock_notify):
+        """Notification failure must not roll back the payment transaction."""
+        booking = self.create_booking()
+        result = booking.mark_as_paid('pi_robust')
+
+        self.assertTrue(result)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PAID)
+        self.assertEqual(booking.stripe_payment_id, 'pi_robust')
+
+
+@override_settings(
+    STRIPE_SECRET_KEY='sk_test_webhook',
+    STRIPE_WEBHOOK_SECRET='whsec_test',
+)
+class StripeWebhookTest(BookingTestMixin, TestCase):
+    """Tests for StripeWebhookView."""
+
+    def setUp(self):
+        self.create_base_objects()
+        self.client = Client()
+        self.url = reverse('stripe_webhook')
+        from django.core.cache import cache
+        cache.clear()
+
+    @override_settings(STRIPE_SECRET_KEY='')
+    def test_rejected_when_stripe_not_configured(self):
+        resp = self.client.post(
+            self.url, data='{}', content_type='application/json',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['status'], 'stripe not configured')
+
+    @patch('bookings.views.stripe.Webhook.construct_event')
+    def test_rejects_invalid_signature(self, mock_construct):
+        import stripe as stripe_lib
+        mock_construct.side_effect = stripe_lib.error.SignatureVerificationError(
+            'bad sig', 'sig',
+        )
+        resp = self.client.post(
+            self.url, data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=invalid',
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    @patch('bookings.views.stripe.Webhook.construct_event')
+    def test_rejects_invalid_payload(self, mock_construct):
+        mock_construct.side_effect = ValueError('bad json')
+        resp = self.client.post(
+            self.url, data=b'not json', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=ok',
+        )
+        self.assertEqual(resp.status_code, 400)
+
+    @patch('bookings.views.stripe.Charge.retrieve')
+    @patch('bookings.views.stripe.PaymentIntent.retrieve')
+    @patch('bookings.views.stripe.Webhook.construct_event')
+    def test_marks_booking_as_paid(self, mock_construct, mock_pi, mock_charge):
+        booking = self.create_booking()
+        mock_construct.return_value = {
+            'id': 'evt_paid_1',
+            'type': 'checkout.session.completed',
+            'data': {'object': {
+                'client_reference_id': str(booking.pk),
+                'payment_intent': 'pi_webhook_1',
+            }},
+        }
+        mock_pi.return_value = MagicMock(latest_charge='ch_w_1')
+        mock_charge.return_value = MagicMock(receipt_url='https://receipt/w1')
+
+        resp = self.client.post(
+            self.url, data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=ok',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['status'], 'ok')
+
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PAID)
+        self.assertEqual(booking.stripe_payment_id, 'pi_webhook_1')
+        self.assertEqual(booking.stripe_receipt_url, 'https://receipt/w1')
+
+    @patch('bookings.views.stripe.Charge.retrieve')
+    @patch('bookings.views.stripe.PaymentIntent.retrieve')
+    @patch('bookings.views.stripe.Webhook.construct_event')
+    def test_idempotent_same_event_id(self, mock_construct, mock_pi, mock_charge):
+        booking = self.create_booking()
+        mock_construct.return_value = {
+            'id': 'evt_same_id',
+            'type': 'checkout.session.completed',
+            'data': {'object': {
+                'client_reference_id': str(booking.pk),
+                'payment_intent': 'pi_idem_1',
+            }},
+        }
+        mock_pi.return_value = MagicMock(latest_charge='ch_i_1')
+        mock_charge.return_value = MagicMock(receipt_url='https://receipt/i1')
+
+        resp1 = self.client.post(
+            self.url, data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=ok',
+        )
+        self.assertEqual(resp1.status_code, 200)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PAID)
+
+        resp2 = self.client.post(
+            self.url, data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=ok',
+        )
+        self.assertEqual(resp2.status_code, 200)
+        self.assertEqual(resp2.json()['status'], 'already processed')
+
+    @patch('bookings.views.stripe.Webhook.construct_event')
+    def test_handles_unknown_booking_id(self, mock_construct):
+        mock_construct.return_value = {
+            'id': 'evt_unknown',
+            'type': 'checkout.session.completed',
+            'data': {'object': {
+                'client_reference_id': '999999',
+                'payment_intent': 'pi_unknown',
+            }},
+        }
+        resp = self.client.post(
+            self.url, data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=ok',
+        )
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json()['status'], 'ok')
+
+    @patch('bookings.views.stripe.Webhook.construct_event')
+    def test_ignores_other_event_types(self, mock_construct):
+        booking = self.create_booking()
+        mock_construct.return_value = {
+            'id': 'evt_other',
+            'type': 'customer.created',
+            'data': {'object': {}},
+        }
+        resp = self.client.post(
+            self.url, data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=ok',
+        )
+        self.assertEqual(resp.status_code, 200)
+        booking.refresh_from_db()
+        self.assertEqual(booking.status, Booking.Status.PENDING)
+
+    @patch('bookings.views.stripe.Charge.retrieve')
+    @patch('bookings.views.stripe.PaymentIntent.retrieve')
+    @patch('bookings.views.stripe.Webhook.construct_event')
+    def test_does_not_repay_already_paid_booking(self, mock_construct, mock_pi, mock_charge):
+        booking = self.create_booking()
+        booking.mark_as_paid('pi_first')
+        booking.refresh_from_db()
+
+        mock_construct.return_value = {
+            'id': 'evt_repay',
+            'type': 'checkout.session.completed',
+            'data': {'object': {
+                'client_reference_id': str(booking.pk),
+                'payment_intent': 'pi_second',
+            }},
+        }
+        mock_pi.return_value = MagicMock(latest_charge='ch_x')
+        mock_charge.return_value = MagicMock(receipt_url='https://receipt/x')
+
+        resp = self.client.post(
+            self.url, data=b'{}', content_type='application/json',
+            HTTP_STRIPE_SIGNATURE='t=1,v1=ok',
+        )
+        self.assertEqual(resp.status_code, 200)
+        booking.refresh_from_db()
+        self.assertEqual(booking.stripe_payment_id, 'pi_first')
+
+
+class ExtendBookingViewTest(BookingTestMixin, TestCase):
+    """Tests for ExtendBookingView (dashboard)."""
+
+    def setUp(self):
+        self.create_base_objects()
+        self.client = Client()
+        self.client.force_login(self.user)
+        self.parent = self.create_booking()
+        self.parent.mark_as_paid('pi_parent')
+        self.parent.refresh_from_db()
+
+    def test_creates_child_booking(self):
+        url = reverse('cabinet-booking-extend', args=[self.parent.pk])
+        resp = self.client.post(url, {'period': self.period.id})
+
+        self.assertEqual(resp.status_code, 302)
+        # Redirect to checkout (booking_checkout)
+        self.assertIn('checkout', resp.url)
+
+        extension = Booking.objects.exclude(pk=self.parent.pk).latest('created_at')
+        self.assertEqual(extension.parent_booking_id, self.parent.pk)
+        self.assertEqual(extension.deposit_aed, Decimal('0'))
+        self.assertEqual(extension.start_date, self.parent.end_date)
+        self.assertTrue(extension.is_extension)
+
+    def test_without_period_redirects_back_with_error(self):
+        url = reverse('cabinet-booking-extend', args=[self.parent.pk])
+        resp = self.client.post(url, {})
+
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn(str(self.parent.pk), resp.url)
+        self.assertEqual(
+            Booking.objects.filter(parent_booking=self.parent).count(),
+            0,
+        )
+
+    def test_includes_addons(self):
+        addon = AddonService.objects.create(
+            service=self.service, name='Wash', price_aed=Decimal('30.00'),
+        )
+        url = reverse('cabinet-booking-extend', args=[self.parent.pk])
+        resp = self.client.post(url, {
+            'period': self.period.id,
+            'addons': [str(addon.id)],
+        })
+        self.assertEqual(resp.status_code, 302)
+
+        extension = Booking.objects.exclude(pk=self.parent.pk).latest('created_at')
+        self.assertEqual(extension.addons_aed, Decimal('30.00'))
+        # 500 (1 mo) + 30 (addon), no deposit
+        self.assertEqual(extension.total_aed, Decimal('530.00'))
+
+    def test_rejects_other_users_booking(self):
+        other = User.objects.create_user(
+            email='other@x.com', password='p1234567', first_name='O', last_name='X',
+        )
+        other_booking = self.create_booking(user=other)
+        other_booking.mark_as_paid('pi_other')
+
+        url = reverse('cabinet-booking-extend', args=[other_booking.pk])
+        resp = self.client.post(url, {'period': self.period.id})
+        self.assertEqual(resp.status_code, 404)
+
+    def test_rejects_cancelled_booking(self):
+        cancelled = self.create_booking()
+        cancelled.cancel()
+
+        url = reverse('cabinet-booking-extend', args=[cancelled.pk])
+        resp = self.client.post(url, {'period': self.period.id})
+        self.assertEqual(resp.status_code, 404)
+
+    def test_payment_updates_parent_end_date(self):
+        original_end = self.parent.end_date
+
+        url = reverse('cabinet-booking-extend', args=[self.parent.pk])
+        self.client.post(url, {'period': self.period.id})
+
+        extension = Booking.objects.exclude(pk=self.parent.pk).latest('created_at')
+        new_end = extension.end_date
+        self.assertGreater(new_end, original_end)
+
+        extension.mark_as_paid('pi_extension')
+        extension.refresh_from_db()
+        self.parent.refresh_from_db()
+
+        self.assertEqual(extension.status, Booking.Status.COMPLETED)
+        self.assertEqual(self.parent.end_date, new_end)
+
+
+class BookingNumberTest(BookingTestMixin, TestCase):
+    """Tests for the 5-digit Booking.number identifier."""
+
+    def setUp(self):
+        self.create_base_objects()
+
+    def test_first_booking_gets_00001(self):
+        booking = self.create_booking()
+        self.assertEqual(booking.number, '00001')
+
+    def test_sequential_numbers(self):
+        b1 = self.create_booking()
+        b2 = self.create_booking()
+        b3 = self.create_booking()
+        self.assertEqual(b1.number, '00001')
+        self.assertEqual(b2.number, '00002')
+        self.assertEqual(b3.number, '00003')
+
+    def test_extension_gets_its_own_number(self):
+        """Extensions share the global numbering sequence."""
+        parent = self.create_booking()
+        parent.mark_as_paid('pi_parent_num')
+        parent.refresh_from_db()
+
+        extension = self.create_booking(
+            parent_booking=parent,
+            start_date=parent.end_date,
+            end_date=parent.end_date + timedelta(days=30),
+        )
+        self.assertEqual(parent.number, '00001')
+        self.assertEqual(extension.number, '00002')
+
+    def test_number_format_is_five_digits(self):
+        booking = self.create_booking()
+        self.assertEqual(len(booking.number), 5)
+        self.assertTrue(booking.number.isdigit())
+
+    def test_number_is_unique(self):
+        from django.db import IntegrityError
+        b1 = self.create_booking()
+        # Manually try to create another with the same number
+        with self.assertRaises(IntegrityError):
+            with transaction.atomic():
+                Booking.objects.create(
+                    user=self.user,
+                    tariff=self.tariff,
+                    period=self.period,
+                    start_date=timezone.now().date(),
+                    price_aed=Decimal('500.00'),
+                    addons_aed=Decimal('0.00'),
+                    deposit_aed=Decimal('200.00'),
+                    total_aed=Decimal('700.00'),
+                    number=b1.number,  # Force collision
+                )
+
+    def test_number_preserved_on_save(self):
+        """Existing booking's number doesn't change when saved again."""
+        booking = self.create_booking()
+        original_number = booking.number
+        booking.manager_notes = 'updated'
+        booking.save()
+        booking.refresh_from_db()
+        self.assertEqual(booking.number, original_number)
+
+    def test_number_continues_after_cancelled(self):
+        """Cancelled bookings still consume a number; new bookings continue past."""
+        b1 = self.create_booking()
+        b1.cancel()
+        b2 = self.create_booking()
+        self.assertEqual(b1.number, '00001')
+        self.assertEqual(b2.number, '00002')
+
+    def test_str_includes_number(self):
+        booking = self.create_booking()
+        self.assertIn(f'#{booking.number}', str(booking))
